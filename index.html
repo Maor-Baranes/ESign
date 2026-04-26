@@ -578,6 +578,7 @@ async function loadDocument() {
     console.log('First bytes:', pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
 
     await renderPDF(pdfBytes);
+    console.log('Render complete, pages:', (await pdfjsLib.getDocument({data: pdfBytes}).promise).numPages);
     show('signing-screen');
 
   } catch (err) {
