@@ -569,9 +569,13 @@ async function loadDocument() {
     document.getElementById('doc-name').textContent = fileName;
 
     // base64 → Uint8Array
-    const bin = atob(data.pdf.replace(/\s/g, ''));
-    pdfBytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) pdfBytes[i] = bin.charCodeAt(i);
+    const binary = data.pdf.replace(/\s/g, '');
+    const byteCharacters = atob(binary);
+    pdfBytes = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      pdfBytes[i] = byteCharacters.charCodeAt(i);
+      }
+    console.log('First bytes:', pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
 
     await renderPDF(pdfBytes);
     show('signing-screen');
