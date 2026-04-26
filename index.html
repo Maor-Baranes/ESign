@@ -568,7 +568,7 @@ async function loadDocument() {
     document.getElementById('doc-name').textContent = fileName;
 
     // base64 → Uint8Array
-    const bin = atob(data.pdf);
+    const bin = atob(data.pdf.replace(/\s/g, ''));
     pdfBytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) pdfBytes[i] = bin.charCodeAt(i);
 
