@@ -596,7 +596,7 @@ async function renderPDF(bytes) {
   const panel = document.getElementById('pdf-panel');
   panel.innerHTML = '';
 
-  const loadingTask = pdfjsLib.getDocument({ data: bytes });
+  const loadingTask = pdfjsLib.getDocument({ data: bytes.slice() });
   const pdf = await loadingTask.promise;
 
   for (let p = 1; p <= pdf.numPages; p++) {
