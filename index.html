@@ -595,13 +595,18 @@ async function renderPDF(bytes) {
   const panel = document.getElementById('pdf-panel');
   panel.innerHTML = '';
 
-  const loadingTask = pdfjsLib.getDocument({ data: bytes.slice() });
+  const loadingTask = pdfjsLib.getDocument({
+    data: bytes.slice(),
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: true
+  });
+
   const pdf = await loadingTask.promise;
 
   for (let p = 1; p <= pdf.numPages; p++) {
     const page     = await pdf.getPage(p);
-    const scale    = Math.min(1.5, (panel.clientWidth - 48) / page.getViewport({ scale: 1 }).width);
-    const viewport = page.getViewport({ scale });
+    const viewport = page.getViewport({ scale: 1.5 });
 
     const canvas = document.createElement('canvas');
     canvas.className = 'pdf-page';
@@ -609,10 +614,12 @@ async function renderPDF(bytes) {
     canvas.height = viewport.height;
     panel.appendChild(canvas);
 
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    await page.render({
+      canvasContext: canvas.getContext('2d'),
+      viewport
+    }).promise;
   }
 }
-
 
 // ── SIGNATURE CANVAS ─────────────────────────────────────────
 function initCanvas() {
