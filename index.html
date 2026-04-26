@@ -582,7 +582,6 @@ try {
 } catch(err) {
   console.log('Render error:', err.message);
 }
-    console.log('Render complete, pages:', (await pdfjsLib.getDocument({data: pdfBytes}).promise).numPages);
     show('signing-screen');
 
   } catch (err) {
