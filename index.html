@@ -575,7 +575,6 @@ async function loadDocument() {
     for (let i = 0; i < byteCharacters.length; i++) {
       pdfBytes[i] = byteCharacters.charCodeAt(i);
       }
-    console.log('First bytes:', pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
 
 try {
   await renderPDF(pdfBytes);
