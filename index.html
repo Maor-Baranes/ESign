@@ -561,6 +561,7 @@ async function loadDocument() {
   try {
     const res  = await fetch(`${APPS_SCRIPT_URL}?token=${encodeURIComponent(token)}&action=fetch`);
     const data = await res.json();
+    console.log('data.pdf length:', data.pdf ? data.pdf.length : 'MISSING');  
 
     if (data.error) { showError(data.error); return; }
 
