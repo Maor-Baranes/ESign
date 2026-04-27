@@ -492,75 +492,54 @@ async function submitSigned() {
     const signerDate = document.getElementById('signer-date').value;
     const sigCanvas  = document.getElementById('sig-canvas');
     const sigDataURL = sigCanvas.toDataURL('image/png');
-    
-    // 1. Get signature bytes safely
-    const sigBase64 = sigDataURL.split(',')[1];
-    const sigBytes = Uint8Array.from(atob(sigBase64), c => c.charCodeAt(0));
+    const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    // 2. Load the PDF (This works for DOCX/XLSX too because the backend converts them to PDF first)
+    // Load the document (The backend conversion ensures this is always a PDF now)
     const pdfLibDoc = await PDFDocument.load(pdfBytes);
-    const pages = pdfLibDoc.getPages();
-    const lastPage = pages[pages.length - 1];
+    const pages     = pdfLibDoc.getPages();
+    const lastPage  = pages[pages.length - 1];
+    const font      = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont  = await pdfLibDoc.embedFont(StandardFonts.HelveticaBold);
+    const sigImg    = await pdfLibDoc.embedPng(sigBytes);
     
-    // 3. Embed font and signature image
-    const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
-    const sigImg = await pdfLibDoc.embedPng(sigBytes);
+    // Draw signature and info
+    const marginX = 56, blockY = 90, sigW = 160, sigH = 56;
+    lastPage.drawRectangle({ x: marginX - 10, y: blockY - 50, width: sigW + 20, height: sigH + 60, color: rgb(0.97, 0.97, 0.97), borderColor: rgb(0.85, 0.85, 0.85), borderWidth: 0.5 });
+    lastPage.drawImage(sigImg, { x: marginX, y: blockY, width: sigW, height: sigH });
+    lastPage.drawText(signerName, { x: marginX, y: blockY - 20, size: 10, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
+    lastPage.drawText(`Signed: ${signerDate}`, { x: marginX, y: blockY - 33, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
     
-    // Draw signature
-    lastPage.drawImage(sigImg, { 
-      x: 50, 
-      y: 120, 
-      width: 150, 
-      height: 50 
-    });
-    
-    // Draw text
-    lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { 
-      x: 50, 
-      y: 105, 
-      size: 10, 
-      font 
-    });
-    
-    // 4. Save the PDF to bytes
     signedPdfBytes = await pdfLibDoc.save();
-    
-    // 5. CRITICAL FIX: Convert bytes to Base64 using a loop.
-    // The previous "...signedPdfBytes" spread operator crashes the browser on large files.
+
+    // THE FIX: Robust Binary-to-Base64 conversion (No .forEach or spread)
     let binary = '';
     const uint8 = new Uint8Array(signedPdfBytes);
-    const len = uint8.byteLength;
-    for (let i = 0; i < len; i++) {
+    for (let i = 0; i < uint8.byteLength; i++) {
       binary += String.fromCharCode(uint8[i]);
     }
     const signedB64 = btoa(binary);
 
-    // 6. Final Submission using your existing no-cors logic
-    const payload = {
-      action: 'complete',
-      token: currentToken,
-      signedPdf: signedB64,
-      signerName: signerName,
-      signerDate: signerDate,
-      sigImage: sigBase64,
-      fileName: currentFileName.replace(/\.[^.]+$/, '.pdf') // Standardize as PDF
-    };
-
+    // Submit back to Apps Script
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        action: 'complete',
+        token: currentToken,
+        signedPdf: signedB64,
+        signerName: signerName,
+        signerDate: signerDate,
+        sigImage: sigDataURL.split(',')[1],
+        fileName: currentFileName.replace(/\.[^.]+$/, '.pdf')
+      })
     });
 
-    // Wait for the script to finish processing the file in Drive
-    await new Promise(r => setTimeout(r, 3500));
+    await new Promise(r => setTimeout(r, 4000));
     show('success-screen');
-
   } catch (err) {
-    console.error("Submission Error:", err);
-    alert('Submission failed: ' + err.message);
-    btn.disabled = false;
+    alert('Error submitting: ' + err.message);
+    btn.disabled = false; 
     btn.textContent = 'Submit Signed Document';
   }
 }
