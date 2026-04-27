@@ -225,7 +225,7 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
 // ============================================================
 //  CONFIGURATION — update before deploying
 // ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznNtdCpInJJ2SDrdiY2gCX11MuOqgJWsF2lOsh2TB58PQSiY2pUNjtvoHVxqbyrT0G/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypjBL9LYW9nJ1mJbc3-RiguRg0uk9NOkvAomOFAk1RLLJzwS0OzpRtZQq_ObXNZa5p/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: '888racoon@gmail.com' },
@@ -496,37 +496,39 @@ async function submitSigned() {
     const signerDate = document.getElementById('signer-date').value;
     const sigCanvas  = document.getElementById('sig-canvas');
     const sigDataURL = sigCanvas.toDataURL('image/png');
+    const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    let signedB64 = '';
-    if (currentFileType === 'pdf') {
-      const pdfLibDoc = await PDFDocument.load(pdfBytes);
-      const pages = pdfLibDoc.getPages();
-      const lastPage = pages[pages.length - 1];
-      const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
-      const sigImg = await pdfLibDoc.embedPng(Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0)));
-      
-      lastPage.drawImage(sigImg, { x: 50, y: 150, width: 150, height: 50 });
-      lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { x: 50, y: 130, size: 10, font });
-      
-      const savedBytes = await pdfLibDoc.save();
-      signedB64 = btoa(String.fromCharCode(...savedBytes));
-    } else {
-      signedB64 = btoa(String.fromCharCode(...pdfBytes));
+    // Everything is handled as PDF at this stage
+    const pdfLibDoc = await PDFDocument.load(pdfBytes);
+    const pages = pdfLibDoc.getPages();
+    const lastPage = pages[pages.length - 1];
+    const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
+    const sigImg = await pdfLibDoc.embedPng(sigBytes);
+    
+    lastPage.drawImage(sigImg, { x: 50, y: 100, width: 150, height: 50 });
+    lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { x: 50, y: 85, size: 10, font });
+    
+    signedPdfBytes = await pdfLibDoc.save();
+    
+    // SAFE CONVERSION: Loop instead of spread operator (...) to prevent crashes
+    let binary = '';
+    const bytes = new Uint8Array(signedPdfBytes);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
     }
-
-    const payload = {
-      action: 'complete',
-      token: currentToken,
-      signedPdf: signedB64,
-      signerName: signerName,
-      fileName: currentFileName
-    };
+    const signedB64 = btoa(binary);
 
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      mode: 'no-cors', // Bypasses CORS NetworkError
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        action: 'complete',
+        token: currentToken,
+        signedPdf: signedB64,
+        signerName: signerName,
+        fileName: currentFileName.replace(/\.[^.]+$/, '.pdf')
+      })
     });
 
     await new Promise(r => setTimeout(r, 3500));
