@@ -494,32 +494,29 @@ async function submitSigned() {
     const sigDataURL = sigCanvas.toDataURL('image/png');
     const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    // Load the document (The backend conversion ensures this is always a PDF now)
+    // Load PDF (Backend ensures this is always PDF now)
     const pdfLibDoc = await PDFDocument.load(pdfBytes);
     const pages     = pdfLibDoc.getPages();
     const lastPage  = pages[pages.length - 1];
     const font      = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont  = await pdfLibDoc.embedFont(StandardFonts.HelveticaBold);
     const sigImg    = await pdfLibDoc.embedPng(sigBytes);
     
-    // Draw signature and info
-    const marginX = 56, blockY = 90, sigW = 160, sigH = 56;
-    lastPage.drawRectangle({ x: marginX - 10, y: blockY - 50, width: sigW + 20, height: sigH + 60, color: rgb(0.97, 0.97, 0.97), borderColor: rgb(0.85, 0.85, 0.85), borderWidth: 0.5 });
-    lastPage.drawImage(sigImg, { x: marginX, y: blockY, width: sigW, height: sigH });
-    lastPage.drawText(signerName, { x: marginX, y: blockY - 20, size: 10, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
-    lastPage.drawText(`Signed: ${signerDate}`, { x: marginX, y: blockY - 33, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+    // Draw signature
+    lastPage.drawImage(sigImg, { x: 50, y: 100, width: 150, height: 50 });
+    lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { x: 50, y: 85, size: 10, font });
     
     signedPdfBytes = await pdfLibDoc.save();
 
-    // THE FIX: Robust Binary-to-Base64 conversion (No .forEach or spread)
+    // PERFORMANCE FIX: This solves the "Nothing Happens" hang
     let binary = '';
     const uint8 = new Uint8Array(signedPdfBytes);
-    for (let i = 0; i < uint8.byteLength; i++) {
+    const len = uint8.byteLength;
+    for (let i = 0; i < len; i++) {
       binary += String.fromCharCode(uint8[i]);
     }
     const signedB64 = btoa(binary);
 
-    // Submit back to Apps Script
+    // POST using your original architecture
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -529,8 +526,6 @@ async function submitSigned() {
         token: currentToken,
         signedPdf: signedB64,
         signerName: signerName,
-        signerDate: signerDate,
-        sigImage: sigDataURL.split(',')[1],
         fileName: currentFileName.replace(/\.[^.]+$/, '.pdf')
       })
     });
@@ -538,7 +533,7 @@ async function submitSigned() {
     await new Promise(r => setTimeout(r, 4000));
     show('success-screen');
   } catch (err) {
-    alert('Error submitting: ' + err.message);
+    alert('Error: ' + err.message);
     btn.disabled = false; 
     btn.textContent = 'Submit Signed Document';
   }
