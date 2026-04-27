@@ -524,12 +524,12 @@ async function submitSigned() {
     }
 
     await fetch(APPS_SCRIPT_URL, {
-  method: 'POST',
-  mode: 'no-cors',
-  body: JSON.stringify({...})
-});
-await new Promise(r => setTimeout(r, 3000));
-show('success-screen');
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({...})
+    });
+    await new Promise(r => setTimeout(r, 3000));
+    show('success-screen');
   } catch (err) {
     alert('Error submitting: ' + err.message);
     btn.disabled = false; btn.textContent = 'Submit Signed Document';
