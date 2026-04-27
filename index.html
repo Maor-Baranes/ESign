@@ -498,7 +498,7 @@ async function submitSigned() {
     const sigDataURL = sigCanvas.toDataURL('image/png');
     const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    // Everything is handled as PDF at this stage
+    // Process as PDF
     const pdfLibDoc = await PDFDocument.load(pdfBytes);
     const pages = pdfLibDoc.getPages();
     const lastPage = pages[pages.length - 1];
@@ -510,7 +510,7 @@ async function submitSigned() {
     
     signedPdfBytes = await pdfLibDoc.save();
     
-    // SAFE CONVERSION: Loop instead of spread operator (...) to prevent crashes
+    // Robust Base64 conversion
     let binary = '';
     const bytes = new Uint8Array(signedPdfBytes);
     for (let i = 0; i < bytes.byteLength; i++) {
@@ -518,9 +518,10 @@ async function submitSigned() {
     }
     const signedB64 = btoa(binary);
 
+    // THE FETCH: We do NOT check response.ok here
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors', // Bypasses CORS NetworkError
+      mode: 'no-cors', 
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         action: 'complete',
@@ -531,10 +532,16 @@ async function submitSigned() {
       })
     });
 
+    // Assume success because no-cors won't tell us otherwise
+    // We wait 3.5 seconds to give the backend time to finish
     await new Promise(r => setTimeout(r, 3500));
     show('success-screen');
+
   } catch (err) {
-    alert('Submission failed: ' + err.message);
+    // This will now only trigger if the network is actually down 
+    // or the PDF-lib processing crashes.
+    console.error("Signing Error:", err);
+    alert('Submission encountered a local error: ' + err.message);
     btn.disabled = false;
     btn.textContent = 'Submit Signed Document';
   }
