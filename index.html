@@ -225,7 +225,7 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
 // ============================================================
 //  CONFIGURATION — update before deploying
 // ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzG54CVSR3Eledur_wiIAkS3I4lzxallP770W-i_SLCsdmffe_j0kfrfZNPCAuHvmNO/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznNtdCpInJJ2SDrdiY2gCX11MuOqgJWsF2lOsh2TB58PQSiY2pUNjtvoHVxqbyrT0G/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: '888racoon@gmail.com' },
@@ -339,29 +339,33 @@ function triggerUpload() { document.getElementById('file-upload-input').click();
 async function handleUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-  setLoading('Uploading document…');
+  setLoading('Uploading document...');
+  
   try {
     const base64 = await fileToBase64(file);
+    const payload = {
+      action: 'store',
+      pdf: base64,
+      fileName: file.name,
+      signerEmail: currentUser.email,
+      senderEmail: currentUser.email
+    };
+
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify({
-        action:      'store',
-        pdf:         base64,
-        fileName:    file.name,
-        signerEmail: currentUser.email,
-        senderEmail: currentUser.email
-      })
+      mode: 'no-cors', // Essential for Google Apps Script
+      headers: { 'Content-Type': 'text/plain' }, // Avoids CORS pre-flight
+      body: JSON.stringify(payload)
     });
-    // Response is opaque in no-cors — wait for Apps Script to finish then reload
-    await new Promise(r => setTimeout(r, 3000));
+
+    // Wait for the script to process the 'no-cors' request
+    await new Promise(r => setTimeout(r, 3500));
     event.target.value = '';
     await loadDashboard();
   } catch (err) {
-    alert('Upload failed: ' + err.message);
-    show('dashboard-screen');
+    showError('Network Error: Please check script deployment permissions.');
   }
-}  
+}
   
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -484,36 +488,30 @@ function checkReady() {
 // ── SUBMIT
 async function submitSigned() {
   const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.textContent = 'Processing…';
+  btn.disabled = true; 
+  btn.textContent = 'Processing...';
+  
   try {
     const signerName = document.getElementById('signer-name').value.trim();
     const signerDate = document.getElementById('signer-date').value;
     const sigCanvas  = document.getElementById('sig-canvas');
     const sigDataURL = sigCanvas.toDataURL('image/png');
-    const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    let signedB64;
+    let signedB64 = '';
     if (currentFileType === 'pdf') {
       const pdfLibDoc = await PDFDocument.load(pdfBytes);
-      const pages     = pdfLibDoc.getPages();
-      const lastPage  = pages[pages.length - 1];
-      const font      = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont  = await pdfLibDoc.embedFont(StandardFonts.HelveticaBold);
-      const sigImg    = await pdfLibDoc.embedPng(sigBytes);
-      const marginX   = 56, blockY = 90, sigW = 160, sigH = 56;
-      lastPage.drawRectangle({ x: marginX - 10, y: blockY - 50, width: sigW + 20, height: sigH + 60, color: rgb(0.97, 0.97, 0.97), borderColor: rgb(0.85, 0.85, 0.85), borderWidth: 0.5 });
-      lastPage.drawImage(sigImg, { x: marginX, y: blockY, width: sigW, height: sigH });
-      lastPage.drawLine({ start: { x: marginX, y: blockY - 5 }, end: { x: marginX + sigW, y: blockY - 5 }, thickness: 0.75, color: rgb(0.3, 0.3, 0.3) });
-      lastPage.drawText(signerName, { x: marginX, y: blockY - 20, size: 10, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
-      lastPage.drawText(`Signed: ${signerDate}`, { x: marginX, y: blockY - 33, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
-      lastPage.drawText(`ID: ${currentToken}`, { x: marginX, y: blockY - 46, size: 7, font, color: rgb(0.65, 0.65, 0.65) });
-      signedPdfBytes = await pdfLibDoc.save();
-      let bin = ''; signedPdfBytes.forEach(b => bin += String.fromCharCode(b));
-      signedB64 = btoa(bin);
+      const pages = pdfLibDoc.getPages();
+      const lastPage = pages[pages.length - 1];
+      const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
+      const sigImg = await pdfLibDoc.embedPng(Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0)));
+      
+      lastPage.drawImage(sigImg, { x: 50, y: 150, width: 150, height: 50 });
+      lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { x: 50, y: 130, size: 10, font });
+      
+      const savedBytes = await pdfLibDoc.save();
+      signedB64 = btoa(String.fromCharCode(...savedBytes));
     } else {
-      let bin = ''; pdfBytes.forEach(b => bin += String.fromCharCode(b));
-      signedB64 = btoa(bin);
-      signedPdfBytes = pdfBytes;
+      signedB64 = btoa(String.fromCharCode(...pdfBytes));
     }
 
     const payload = {
@@ -521,25 +519,25 @@ async function submitSigned() {
       token: currentToken,
       signedPdf: signedB64,
       signerName: signerName,
-      signerDate: signerDate,
-      sigImage: sigDataURL.split(',')[1],
       fileName: currentFileName
     };
 
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
-    
-    await new Promise(r => setTimeout(r, 3000));
+
+    await new Promise(r => setTimeout(r, 3500));
     show('success-screen');
   } catch (err) {
-    alert('Error submitting: ' + err.message);
-    btn.disabled = false; btn.textContent = 'Submit Signed Document';
+    alert('Submission failed: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Submit Signed Document';
   }
 }
-
+  
 // ── DOWNLOAD
 function downloadSigned() {
   if (signedPdfBytes) dl(signedPdfBytes, currentFileName.replace(/(\.[^.]+)$/, '_signed$1'));
