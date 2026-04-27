@@ -7,821 +7,556 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --ink: #0f0f0f;
-  --ink-light: #555;
-  --border: #e2e2e2;
-  --bg: #f7f6f3;
-  --white: #ffffff;
-  --blue: #1d4ed8;
-  --blue-dark: #1e3a8a;
-  --red: #dc2626;
-  --green: #16a34a;
-  --radius: 10px;
-  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --ink: #0f0f0f; --ink-light: #555; --border: #e2e2e2;
+  --bg: #f7f6f3; --white: #ffffff; --blue: #1d4ed8;
+  --blue-dark: #1e3a8a; --red: #dc2626; --green: #16a34a;
+  --radius: 10px; --shadow: 0 2px 16px rgba(0,0,0,0.08);
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  min-height: 100vh;
-}
-
-/* ── SCREENS ── */
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
 .screen { display: none; }
 .screen.active { display: flex; }
 
-/* ── LOGIN ── */
-#login-screen {
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: var(--bg);
-}
-
-.login-wrap {
-  width: 100%;
-  max-width: 400px;
-  padding: 24px;
-}
-
-.login-logo {
-  font-family: 'DM Serif Display', serif;
-  font-size: 28px;
-  margin-bottom: 6px;
-  letter-spacing: -0.5px;
-}
-
+/* LOGIN */
+#login-screen { align-items: center; justify-content: center; min-height: 100vh; }
+.login-wrap { width: 100%; max-width: 400px; padding: 24px; }
+.login-logo { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 6px; }
 .login-logo span { color: var(--blue); }
-
-.login-sub {
-  font-size: 14px;
-  color: var(--ink-light);
-  margin-bottom: 36px;
-}
-
-.card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow);
-}
-
+.login-sub { font-size: 14px; color: var(--ink-light); margin-bottom: 36px; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 32px; box-shadow: var(--shadow); }
 .field { margin-bottom: 18px; }
-.field label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-light);
-  margin-bottom: 7px;
-}
-
-.field input {
-  width: 100%;
-  padding: 11px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  background: var(--white);
-  outline: none;
-  transition: border-color 0.18s;
-}
-
+.field label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 7px; }
+.field input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; transition: border-color 0.18s; }
 .field input:focus { border-color: var(--blue); }
-
-.error-msg {
-  display: none;
-  font-size: 13px;
-  color: var(--red);
-  margin-bottom: 14px;
-}
-
-.btn {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-}
+.error-msg { display: none; font-size: 13px; color: var(--red); margin-bottom: 14px; }
+.btn { width: 100%; padding: 13px; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
 .btn:hover { opacity: 0.9; }
-.btn:active { transform: scale(0.99); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary { background: var(--ink); color: var(--white); }
-.btn-blue { background: var(--blue); color: var(--white); }
-.btn-ghost {
-  background: transparent;
-  color: var(--ink);
-  border: 1.5px solid var(--border);
-  font-size: 13px;
-  padding: 9px 16px;
-  width: auto;
-}
-.btn-ghost:hover { border-color: var(--ink); }
 
-/* ── LOADING ── */
-#loading-screen {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  gap: 20px;
-}
-
-.spinner {
-  width: 36px; height: 36px;
-  border: 3px solid var(--border);
-  border-top-color: var(--blue);
-  border-radius: 50%;
-  animation: spin 0.75s linear infinite;
-}
+/* LOADING */
+#loading-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.75s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 14px; color: var(--ink-light); }
 
-/* ── SIGNING SCREEN ── */
-#signing-screen {
-  flex-direction: column;
-  min-height: 100vh;
-}
+/* DASHBOARD */
+#dashboard-screen { flex-direction: column; min-height: 100vh; }
+.dash-topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+.dash-brand { font-family: 'DM Serif Display', serif; font-size: 22px; }
+.dash-brand span { color: var(--blue); }
+.dash-user { font-size: 13px; color: var(--ink-light); }
+.dash-body { padding: 36px 32px; max-width: 900px; width: 100%; margin: 0 auto; }
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.dash-title { font-family: 'DM Serif Display', serif; font-size: 26px; }
+.upload-btn { display: flex; align-items: center; gap: 8px; padding: 11px 20px; background: var(--blue); color: white; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+.upload-btn:hover { opacity: 0.88; }
+#file-upload-input { display: none; }
+.dash-section-title { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 12px; margin-top: 28px; }
+.doc-list { display: flex; flex-direction: column; gap: 10px; }
+.doc-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; transition: border-color 0.18s, box-shadow 0.18s; }
+.doc-card.clickable { cursor: pointer; }
+.doc-card.clickable:hover { border-color: var(--blue); box-shadow: 0 2px 12px rgba(29,78,216,0.08); }
+.doc-card-left { display: flex; align-items: center; gap: 14px; }
+.doc-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.doc-icon.pdf { background: #fee2e2; }
+.doc-icon.docx { background: #dbeafe; }
+.doc-icon.xlsx { background: #dcfce7; }
+.doc-icon.other { background: #f3f4f6; }
+.doc-name { font-size: 14px; font-weight: 600; }
+.doc-date { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+.doc-status { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+.doc-status.pending { background: #fef9c3; color: #854d0e; }
+.doc-status.completed { background: #dcfce7; color: #166534; }
+.empty-state { text-align: center; padding: 32px 24px; color: var(--ink-light); font-size: 14px; background: var(--white); border: 1.5px dashed var(--border); border-radius: 12px; }
 
-.topbar {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-}
-
+/* SIGNING */
+#signing-screen { flex-direction: column; min-height: 100vh; }
+.topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
 .topbar-left { display: flex; flex-direction: column; gap: 2px; }
-.topbar-brand {
-  font-family: 'DM Serif Display', serif;
-  font-size: 18px;
-  letter-spacing: -0.3px;
-}
-.topbar-file {
-  font-size: 12px;
-  color: var(--ink-light);
-  max-width: 340px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.topbar-brand { font-family: 'DM Serif Display', serif; font-size: 18px; }
+.topbar-file { font-size: 12px; color: var(--ink-light); max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .topbar-actions { display: flex; gap: 10px; align-items: center; }
-
-.btn-submit {
-  padding: 10px 22px;
-  background: var(--blue);
-  color: var(--white);
-  border: none;
-  border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
-  white-space: nowrap;
-}
+.btn-back { background: none; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 9px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+.btn-back:hover { border-color: var(--ink); }
+.btn-submit { padding: 10px 22px; background: var(--blue); color: var(--white); border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
 .btn-submit:hover { background: var(--blue-dark); }
 .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.layout {
-  display: flex;
-  flex: 1;
-  height: calc(100vh - 61px);
-}
-
-.pdf-panel {
-  flex: 1;
-  overflow-y: auto;
-  background: #3d3d3d;
-  padding: 28px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-canvas.pdf-page {
-  display: block;
-  background: white;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.35);
-  max-width: 100%;
-}
-
-.sidebar {
-  width: 300px;
-  background: var(--white);
-  border-left: 1px solid var(--border);
-  padding: 28px 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
-
-.sidebar-title {
-  font-family: 'DM Serif Display', serif;
-  font-size: 19px;
-  letter-spacing: -0.3px;
-}
-
-.sidebar-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 0 -24px;
-}
-
-.sig-label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-light);
-  margin-bottom: 8px;
-}
-
-.sig-wrap {
-  border: 1.5px dashed var(--border);
-  border-radius: var(--radius);
-  background: #fafafa;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-.sig-wrap:hover { border-color: #bbb; }
-
-#sig-canvas {
-  display: block;
-  cursor: crosshair;
-  touch-action: none;
-  width: 100%;
-  height: 110px;
-}
-
-.sig-hint {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  color: #bbb;
-  pointer-events: none;
-  user-select: none;
-}
-
+.layout { display: flex; flex: 1; height: calc(100vh - 61px); }
+.pdf-panel { flex: 1; overflow-y: auto; background: #3d3d3d; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba(0,0,0,0.35); max-width: 100%; }
+.docx-panel { flex: 1; overflow-y: auto; background: white; padding: 48px; line-height: 1.7; font-size: 14px; }
+.xlsx-panel { flex: 1; overflow: auto; background: white; padding: 24px; }
+.xlsx-panel table { border-collapse: collapse; font-size: 13px; }
+.xlsx-panel td, .xlsx-panel th { border: 1px solid #ddd; padding: 6px 12px; }
+.xlsx-panel th { background: #f3f4f6; font-weight: 600; }
+.sidebar { width: 300px; background: var(--white); border-left: 1px solid var(--border); padding: 28px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
+.sidebar-title { font-family: 'DM Serif Display', serif; font-size: 19px; }
+.sidebar-divider { height: 1px; background: var(--border); margin: 0 -24px; }
+.sig-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 8px; }
+.sig-wrap { border: 1.5px dashed var(--border); border-radius: var(--radius); background: #fafafa; position: relative; overflow: hidden; }
+#sig-canvas { display: block; cursor: crosshair; touch-action: none; width: 100%; height: 110px; }
+.sig-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #bbb; pointer-events: none; }
 .sig-controls { display: flex; justify-content: flex-end; margin-top: 6px; }
+.btn-clear { background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--ink-light); cursor: pointer; text-decoration: underline; }
+.legal-note { font-size: 11.5px; color: #999; line-height: 1.65; border-top: 1px solid var(--border); padding-top: 16px; }
+.already-signed-msg { background: #dcfce7; color: #166534; border-radius: 10px; padding: 14px; font-size: 13px; font-weight: 500; text-align: center; }
 
-.btn-clear {
-  background: none;
-  border: none;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  color: var(--ink-light);
-  cursor: pointer;
-  padding: 4px 0;
-  text-decoration: underline;
-}
-
-.legal-note {
-  font-size: 11.5px;
-  color: #999;
-  line-height: 1.65;
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-}
-
-/* ── SUCCESS ── */
-#success-screen {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  text-align: center;
-  padding: 32px;
-  gap: 14px;
-}
-
-.success-icon {
-  width: 72px; height: 72px;
-  background: #dcfce7;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-
-#success-screen h2 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 30px;
-  letter-spacing: -0.5px;
-}
-
-#success-screen p {
-  font-size: 15px;
-  color: var(--ink-light);
-  max-width: 380px;
-  line-height: 1.6;
-}
-
-.download-btn {
-  margin-top: 8px;
-  padding: 12px 28px;
-  background: var(--green);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  width: auto;
-}
+/* SUCCESS */
+#success-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 14px; }
+.success-icon { width: 72px; height: 72px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px; }
+#success-screen h2 { font-family: 'DM Serif Display', serif; font-size: 30px; }
+#success-screen p { font-size: 15px; color: var(--ink-light); max-width: 380px; line-height: 1.6; }
+.download-btn { margin-top: 8px; padding: 12px 28px; background: var(--green); color: white; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
 .download-btn:hover { opacity: 0.88; }
+.back-dash-btn { padding: 10px 22px; background: none; border: 1.5px solid var(--border); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; }
 
-/* ── ERROR ── */
-#error-screen {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  text-align: center;
-  padding: 32px;
-  gap: 12px;
-}
-
-#error-screen h2 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 26px;
-}
+/* ERROR */
+#error-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 12px; }
+#error-screen h2 { font-family: 'DM Serif Display', serif; font-size: 26px; }
 #error-screen p { font-size: 14px; color: var(--ink-light); max-width: 380px; line-height: 1.6; }
 
-/* ── RESPONSIVE ── */
 @media (max-width: 700px) {
   .layout { flex-direction: column-reverse; height: auto; }
   .sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); }
   .pdf-panel { padding: 16px; }
-  .topbar-actions .btn-ghost { display: none; }
+  .dash-body { padding: 24px 16px; }
 }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     LOGIN
-═══════════════════════════════════════════ -->
+<!-- LOGIN -->
 <div id="login-screen" class="screen">
   <div class="login-wrap">
     <div class="login-logo">Sign<span>.</span></div>
     <div class="login-sub">Secure electronic document signing</div>
     <div class="card">
-      <div class="field">
-        <label>Username</label>
-        <input type="text" id="username" placeholder="Enter your username" autocomplete="off" autofocus>
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="password" placeholder="Enter your password">
-      </div>
+      <div class="field"><label>Username</label><input type="text" id="username" placeholder="Enter your username" autofocus></div>
+      <div class="field"><label>Password</label><input type="password" id="password" placeholder="Enter your password"></div>
       <div class="error-msg" id="login-error">Incorrect username or password.</div>
       <button class="btn btn-primary" onclick="doLogin()">Continue →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     LOADING
-═══════════════════════════════════════════ -->
+<!-- LOADING -->
 <div id="loading-screen" class="screen">
   <div class="spinner"></div>
-  <div class="loading-text">Loading your document…</div>
+  <div class="loading-text" id="loading-text">Loading…</div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     SIGNING
-═══════════════════════════════════════════ -->
+<!-- DASHBOARD -->
+<div id="dashboard-screen" class="screen">
+  <div class="dash-topbar">
+    <div class="dash-brand">Sign<span>.</span></div>
+    <div class="dash-user" id="dash-user-label"></div>
+  </div>
+  <div class="dash-body">
+    <div class="dash-header">
+      <div class="dash-title">Your Documents</div>
+      <button class="upload-btn" onclick="triggerUpload()">＋ Upload Document</button>
+      <input type="file" id="file-upload-input" accept=".pdf,.docx,.doc,.xlsx,.xls" onchange="handleUpload(event)">
+    </div>
+    <div class="dash-section-title">Pending Signature</div>
+    <div class="doc-list" id="pending-list"></div>
+    <div class="dash-section-title">Completed</div>
+    <div class="doc-list" id="completed-list"></div>
+  </div>
+</div>
+
+<!-- SIGNING -->
 <div id="signing-screen" class="screen">
   <div class="topbar">
     <div class="topbar-left">
       <div class="topbar-brand">Sign.</div>
-      <div class="topbar-file" id="doc-name">Loading document…</div>
+      <div class="topbar-file" id="doc-name">Loading…</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost" onclick="downloadOriginal()">↓ Download Original</button>
-      <button class="btn-submit" id="submit-btn" onclick="submitSigned()" disabled>
-        Submit Signed Document
-      </button>
+      <button class="btn-back" onclick="backToDashboard()">← Back</button>
+      <button class="btn-submit" id="submit-btn" onclick="submitSigned()" disabled>Submit Signed Document</button>
     </div>
   </div>
-
   <div class="layout">
-    <!-- PDF viewer -->
-    <div class="pdf-panel" id="pdf-panel"></div>
-
-    <!-- Sidebar -->
+    <div id="doc-viewer" class="pdf-panel"></div>
     <div class="sidebar">
       <div class="sidebar-title">Sign Document</div>
       <div class="sidebar-divider"></div>
-
-      <div class="field">
-        <label>Full Name *</label>
-        <input type="text" id="signer-name" placeholder="Your full legal name" oninput="checkReady()">
-      </div>
-
-      <div class="field">
-        <label>Date</label>
-        <input type="text" id="signer-date" readonly style="background:#fafafa;color:var(--ink-light)">
-      </div>
-
-      <div>
-        <div class="sig-label">Signature *</div>
-        <div class="sig-wrap">
-          <canvas id="sig-canvas"></canvas>
-          <div class="sig-hint" id="sig-hint">Draw your signature here</div>
+      <div id="already-signed-msg" class="already-signed-msg" style="display:none">✓ This document has already been signed.</div>
+      <div id="sign-fields">
+        <div class="field" style="margin-bottom:18px">
+          <label>Full Name *</label>
+          <input type="text" id="signer-name" placeholder="Your full legal name" oninput="checkReady()">
         </div>
-        <div class="sig-controls">
-          <button class="btn-clear" onclick="clearSignature()">Clear signature</button>
+        <div class="field" style="margin-bottom:18px">
+          <label>Date</label>
+          <input type="text" id="signer-date" readonly style="background:#fafafa;color:var(--ink-light)">
+        </div>
+        <div>
+          <div class="sig-label">Signature *</div>
+          <div class="sig-wrap">
+            <canvas id="sig-canvas"></canvas>
+            <div class="sig-hint" id="sig-hint">Draw your signature here</div>
+          </div>
+          <div class="sig-controls"><button class="btn-clear" onclick="clearSignature()">Clear signature</button></div>
         </div>
       </div>
-
-      <div class="legal-note">
-        By submitting this document you confirm that you have read, understood, and agree to sign it electronically. This signature is legally binding.
-      </div>
+      <div class="legal-note">By submitting this document you confirm that you have read, understood, and agree to sign it electronically. This signature is legally binding.</div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     SUCCESS
-═══════════════════════════════════════════ -->
+<!-- SUCCESS -->
 <div id="success-screen" class="screen">
   <div class="success-icon">✓</div>
   <h2>Document Signed</h2>
-  <p>Your signed document has been submitted. A copy will be sent to all relevant parties.</p>
+  <p>Your signed document has been submitted. A copy has been emailed to all relevant parties.</p>
   <button class="download-btn" onclick="downloadSigned()">↓ Download Signed Copy</button>
+  <button class="back-dash-btn" onclick="backToDashboard()" style="margin-top:8px">← Back to Dashboard</button>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     ERROR
-═══════════════════════════════════════════ -->
+<!-- ERROR -->
 <div id="error-screen" class="screen">
   <div style="font-size:48px">⚠</div>
   <h2>Something went wrong</h2>
   <p id="error-message">An unexpected error occurred.</p>
+  <button class="back-dash-btn" onclick="backToDashboard()" style="margin-top:8px">← Back to Dashboard</button>
 </div>
-
 
 <script>
 // ============================================================
-//  ⚙️  CONFIGURATION — UPDATE BEFORE DEPLOYING
+//  CONFIGURATION — update before deploying
 // ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbiVBwq41aT7NSjqUrMBs4b3qVqUCG1X2yLWJTlOY7-6a1MgUejz789InG9siz1CWw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxr2v2bDucbyUVGcQT2C27l8z64BRiigLqZeNeJXRYoj8w4Fit0V_y1qLasMPsqP0FN/exec';
 
-// Hardcoded credentials (username → password)
-// Add as many signers as you need
 const CREDENTIALS = {
-  'signer':  'sign123',
-  'admin':   'admin456'
+  'signer': { password: 'sign123', email: '888racoon@gmail.com' },
+  'admin':  { password: 'admin456', email: '888racoon@gmail.com' }
 };
 // ============================================================
 
-// Load libraries
 const { PDFDocument, rgb, StandardFonts } = PDFLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// State
-let pdfBytes       = null;   // original PDF as Uint8Array
-let signedPdfBytes = null;   // signed PDF as Uint8Array
-let token          = null;
-let fileName       = 'document.pdf';
-let hasSig         = false;
-let isDrawing      = false;
+let currentUser     = null;
+let pdfBytes        = null;
+let signedPdfBytes  = null;
+let currentToken    = null;
+let currentFileName = '';
+let currentFileType = '';
+let hasSig          = false;
+let isDrawing       = false;
 let lastX = 0, lastY = 0;
+let urlToken        = null;
 
-
-// ── INIT ────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  token = new URLSearchParams(window.location.search).get('token');
+  urlToken = new URLSearchParams(window.location.search).get('token');
   document.getElementById('signer-date').value =
-    new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+    new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
   initCanvas();
   show('login-screen');
 });
 
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && isActive('login-screen')) doLogin();
+});
 
-// ── LOGIN ────────────────────────────────────────────────────
+// ── LOGIN
 function doLogin() {
-  const user = document.getElementById('username').value.trim();
-  const pass = document.getElementById('password').value;
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
   const err  = document.getElementById('login-error');
-
-  if (CREDENTIALS[user] && CREDENTIALS[user] === pass) {
+  const cred = CREDENTIALS[username];
+  if (cred && cred.password === password) {
     err.style.display = 'none';
-    loadDocument();
+    currentUser = { username, email: cred.email };
+    if (urlToken) {
+      loadDocumentByToken(urlToken);
+    } else {
+      loadDashboard();
+    }
   } else {
     err.style.display = 'block';
   }
 }
 
-// Enter key on login
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && isActive('login-screen')) doLogin();
-});
-
-
-// ── LOAD DOCUMENT ────────────────────────────────────────────
-async function loadDocument() {
-  if (!token) {
-    showError('No signing token found in the URL. Please use the exact link from your email.');
-    return;
+// ── DASHBOARD
+async function loadDashboard() {
+  setLoading('Loading your documents…');
+  try {
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=list&email=${encodeURIComponent(currentUser.email)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('dash-user-label').textContent = currentUser.email;
+    renderDashboard(data.documents || []);
+    show('dashboard-screen');
+  } catch (err) {
+    showError('Could not load dashboard: ' + err.message);
   }
-  show('loading-screen');
+}
 
+function renderDashboard(docs) {
+  const pending   = docs.filter(d => d.status === 'pending');
+  const completed = docs.filter(d => d.status === 'completed');
+  const pEl = document.getElementById('pending-list');
+  const cEl = document.getElementById('completed-list');
+  pEl.innerHTML = pending.length   ? '' : '<div class="empty-state">No pending documents</div>';
+  cEl.innerHTML = completed.length ? '' : '<div class="empty-state">No completed documents yet</div>';
+  pending.forEach(d   => pEl.appendChild(docCard(d)));
+  completed.forEach(d => cEl.appendChild(docCard(d)));
+}
+
+function docCard(doc) {
+  const ext  = (doc.fileName.split('.').pop() || '').toLowerCase();
+  const icons = { pdf: '📄', docx: '📝', doc: '📝', xlsx: '📊', xls: '📊' };
+  const iconClass = ext === 'pdf' ? 'pdf' : (ext === 'docx' || ext === 'doc') ? 'docx' : (ext === 'xlsx' || ext === 'xls') ? 'xlsx' : 'other';
+  const card = document.createElement('div');
+  card.className = `doc-card${doc.status === 'pending' ? ' clickable' : ''}`;
+  card.innerHTML = `
+    <div class="doc-card-left">
+      <div class="doc-icon ${iconClass}">${icons[ext] || '📎'}</div>
+      <div>
+        <div class="doc-name">${doc.fileName}</div>
+        <div class="doc-date">${doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('en-GB') : ''}</div>
+      </div>
+    </div>
+    <div class="doc-status ${doc.status}">${doc.status === 'pending' ? 'Pending' : 'Signed'}</div>
+  `;
+  if (doc.status === 'pending') card.onclick = () => loadDocumentByToken(doc.token);
+  return card;
+}
+
+function backToDashboard() {
+  pdfBytes = null; signedPdfBytes = null; currentToken = null;
+  document.getElementById('doc-viewer').innerHTML = '';
+  clearSignature();
+  document.getElementById('signer-name').value = '';
+  loadDashboard();
+}
+
+// ── UPLOAD
+function triggerUpload() { document.getElementById('file-upload-input').click(); }
+
+async function handleUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  setLoading('Uploading document…');
+  try {
+    const base64 = await fileToBase64(file);
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action:      'store',
+        pdf:         base64,
+        fileName:    file.name,
+        signerEmail: currentUser.email,
+        senderEmail: currentUser.email
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    event.target.value = '';
+    await loadDashboard();
+  } catch (err) {
+    alert('Upload failed: ' + err.message);
+    show('dashboard-screen');
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = () => resolve(r.result.split(',')[1]);
+    r.onerror = () => reject(new Error('File read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+// ── LOAD DOCUMENT
+async function loadDocumentByToken(token) {
+  setLoading('Loading document…');
+  currentToken = token;
   try {
     const res  = await fetch(`${APPS_SCRIPT_URL}?token=${encodeURIComponent(token)}&action=fetch`);
     const data = await res.json();
-    console.log('data.pdf length:', data.pdf ? data.pdf.length : 'MISSING');  
 
-    if (data.error) { showError(data.error); return; }
+    if (data.error && data.error.includes('already been signed')) {
+      document.getElementById('doc-name').textContent = data.fileName || 'document';
+      document.getElementById('already-signed-msg').style.display = 'block';
+      document.getElementById('sign-fields').style.display = 'none';
+      document.getElementById('submit-btn').style.display = 'none';
+      show('signing-screen');
+      return;
+    }
+    if (data.error) throw new Error(data.error);
 
-    fileName = data.fileName || 'document.pdf';
-    document.getElementById('doc-name').textContent = fileName;
+    currentFileName = data.fileName || 'document';
+    currentFileType = currentFileName.split('.').pop().toLowerCase();
+    document.getElementById('doc-name').textContent = currentFileName;
+    document.getElementById('already-signed-msg').style.display = 'none';
+    document.getElementById('sign-fields').style.display = 'block';
+    document.getElementById('submit-btn').style.display = 'block';
 
-    // base64 → Uint8Array
-    const binary = data.pdf.replace(/\s/g, '');
-    const byteCharacters = atob(binary);
-    pdfBytes = new Uint8Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      pdfBytes[i] = byteCharacters.charCodeAt(i);
-      }
+    const clean = data.pdf.replace(/\s/g, '');
+    const chars = atob(clean);
+    pdfBytes = new Uint8Array(chars.length);
+    for (let i = 0; i < chars.length; i++) pdfBytes[i] = chars.charCodeAt(i);
 
-try {
-  await renderPDF(pdfBytes);
-} catch(err) {
-  console.log('Render error:', err.message);
-}
+    await renderDocument(pdfBytes, currentFileType);
     show('signing-screen');
-
   } catch (err) {
     showError('Could not load document: ' + err.message);
   }
 }
 
+// ── RENDER
+async function renderDocument(bytes, type) {
+  const viewer = document.getElementById('doc-viewer');
+  viewer.innerHTML = '';
+  if (type === 'pdf') {
+    viewer.className = 'pdf-panel';
+    await renderPDF(bytes, viewer);
+  } else if (type === 'docx' || type === 'doc') {
+    viewer.className = 'docx-panel';
+    await renderDOCX(bytes, viewer);
+  } else if (type === 'xlsx' || type === 'xls') {
+    viewer.className = 'xlsx-panel';
+    renderXLSX(bytes, viewer);
+  } else {
+    viewer.className = 'pdf-panel';
+    viewer.innerHTML = '<div style="color:white;padding:32px;text-align:center">Preview not available for this file type.</div>';
+  }
+}
 
-// ── RENDER PDF ───────────────────────────────────────────────
-async function renderPDF(bytes) {
-  const panel = document.getElementById('pdf-panel');
-  panel.innerHTML = '';
-
-  const loadingTask = pdfjsLib.getDocument({
-    data: bytes.slice(),
-    useWorkerFetch: false,
-    isEvalSupported: false,
-    useSystemFonts: true
-  });
-
-  const pdf = await loadingTask.promise;
-
+async function renderPDF(bytes, panel) {
+  const pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
   for (let p = 1; p <= pdf.numPages; p++) {
     const page     = await pdf.getPage(p);
     const viewport = page.getViewport({ scale: 1.5 });
-
-    const canvas = document.createElement('canvas');
+    const canvas   = document.createElement('canvas');
     canvas.className = 'pdf-page';
     canvas.width  = viewport.width;
     canvas.height = viewport.height;
     panel.appendChild(canvas);
-
-    await page.render({
-      canvasContext: canvas.getContext('2d'),
-      viewport
-    }).promise;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
   }
 }
 
-// ── SIGNATURE CANVAS ─────────────────────────────────────────
+async function renderDOCX(bytes, panel) {
+  const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
+  panel.innerHTML = result.value;
+}
+
+function renderXLSX(bytes, panel) {
+  const wb   = XLSX.read(bytes, { type: 'array' });
+  const ws   = wb.Sheets[wb.SheetNames[0]];
+  panel.innerHTML = XLSX.utils.sheet_to_html(ws);
+}
+
+// ── SIGNATURE CANVAS
 function initCanvas() {
   const canvas = document.getElementById('sig-canvas');
-
-  // Make canvas match its CSS display size
-  canvas.width  = 252;
-  canvas.height = 110;
-
+  canvas.width = 252; canvas.height = 110;
   const ctx = canvas.getContext('2d');
-  ctx.strokeStyle = '#0f0f0f';
-  ctx.lineWidth   = 2;
-  ctx.lineCap     = 'round';
-  ctx.lineJoin    = 'round';
-
+  ctx.strokeStyle = '#0f0f0f'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   const pos = e => {
-    const r   = canvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return {
-      x: (src.clientX - r.left) * (canvas.width / r.width),
-      y: (src.clientY - r.top)  * (canvas.height / r.height)
-    };
+    const r = canvas.getBoundingClientRect(), src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * (canvas.width / r.width), y: (src.clientY - r.top) * (canvas.height / r.height) };
   };
-
   const start = e => { e.preventDefault(); isDrawing = true; const p = pos(e); lastX = p.x; lastY = p.y; };
-  const move  = e => {
-    e.preventDefault();
-    if (!isDrawing) return;
-    const p = pos(e);
-    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
-    lastX = p.x; lastY = p.y;
-  };
-  const end = () => {
-    if (!isDrawing) return;
-    isDrawing = false;
-    hasSig    = true;
-    document.getElementById('sig-hint').style.display = 'none';
-    checkReady();
-  };
-
-  canvas.addEventListener('mousedown',  start);
-  canvas.addEventListener('mousemove',  move);
-  canvas.addEventListener('mouseup',    end);
-  canvas.addEventListener('mouseleave', end);
-  canvas.addEventListener('touchstart', start, { passive: false });
-  canvas.addEventListener('touchmove',  move,  { passive: false });
-  canvas.addEventListener('touchend',   end);
+  const move  = e => { e.preventDefault(); if (!isDrawing) return; const p = pos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX = p.x; lastY = p.y; };
+  const end   = () => { if (!isDrawing) return; isDrawing = false; hasSig = true; document.getElementById('sig-hint').style.display = 'none'; checkReady(); };
+  canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end); canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false }); canvas.addEventListener('touchmove', move, { passive: false }); canvas.addEventListener('touchend', end);
 }
 
 function clearSignature() {
   const c = document.getElementById('sig-canvas');
   c.getContext('2d').clearRect(0, 0, c.width, c.height);
-  hasSig = false;
-  document.getElementById('sig-hint').style.display = 'flex';
-  checkReady();
+  hasSig = false; document.getElementById('sig-hint').style.display = 'flex'; checkReady();
 }
 
 function checkReady() {
-  const name = document.getElementById('signer-name').value.trim();
-  document.getElementById('submit-btn').disabled = !(name && hasSig);
+  document.getElementById('submit-btn').disabled = !(document.getElementById('signer-name').value.trim() && hasSig);
 }
 
-
-// ── SUBMIT SIGNED ────────────────────────────────────────────
+// ── SUBMIT
 async function submitSigned() {
   const btn = document.getElementById('submit-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Processing…';
-
+  btn.disabled = true; btn.textContent = 'Processing…';
   try {
     const signerName = document.getElementById('signer-name').value.trim();
     const signerDate = document.getElementById('signer-date').value;
-
-    // ① Get signature PNG as base64
     const sigCanvas  = document.getElementById('sig-canvas');
     const sigDataURL = sigCanvas.toDataURL('image/png');
-    const sigB64     = sigDataURL.split(',')[1];
-    const sigBytes   = Uint8Array.from(atob(sigB64), c => c.charCodeAt(0));
+    const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    // ② Load PDF with pdf-lib
-    const pdfLibDoc = await PDFDocument.load(pdfBytes);
-    const pages     = pdfLibDoc.getPages();
-    const lastPage  = pages[pages.length - 1];
-    const { width, height } = lastPage.getSize();
+    let signedB64;
+    if (currentFileType === 'pdf') {
+      const pdfLibDoc = await PDFDocument.load(pdfBytes);
+      const pages     = pdfLibDoc.getPages();
+      const lastPage  = pages[pages.length - 1];
+      const font      = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont  = await pdfLibDoc.embedFont(StandardFonts.HelveticaBold);
+      const sigImg    = await pdfLibDoc.embedPng(sigBytes);
+      const marginX   = 56, blockY = 90, sigW = 160, sigH = 56;
+      lastPage.drawRectangle({ x: marginX - 10, y: blockY - 50, width: sigW + 20, height: sigH + 60, color: rgb(0.97, 0.97, 0.97), borderColor: rgb(0.85, 0.85, 0.85), borderWidth: 0.5 });
+      lastPage.drawImage(sigImg, { x: marginX, y: blockY, width: sigW, height: sigH });
+      lastPage.drawLine({ start: { x: marginX, y: blockY - 5 }, end: { x: marginX + sigW, y: blockY - 5 }, thickness: 0.75, color: rgb(0.3, 0.3, 0.3) });
+      lastPage.drawText(signerName, { x: marginX, y: blockY - 20, size: 10, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
+      lastPage.drawText(`Signed: ${signerDate}`, { x: marginX, y: blockY - 33, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+      lastPage.drawText(`ID: ${currentToken}`, { x: marginX, y: blockY - 46, size: 7, font, color: rgb(0.65, 0.65, 0.65) });
+      signedPdfBytes = await pdfLibDoc.save();
+      let bin = ''; signedPdfBytes.forEach(b => bin += String.fromCharCode(b));
+      signedB64 = btoa(bin);
+    } else {
+      // DOCX/XLSX: send original file; Apps Script attaches signature image separately
+      let bin = ''; pdfBytes.forEach(b => bin += String.fromCharCode(b));
+      signedB64 = btoa(bin);
+      signedPdfBytes = pdfBytes;
+    }
 
-    const font     = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfLibDoc.embedFont(StandardFonts.HelveticaBold);
-    const sigImg   = await pdfLibDoc.embedPng(sigBytes);
-
-    // ③ Embed signature block at bottom-left
-    const marginX   = 56;
-    const blockY    = 90;   // from bottom
-    const sigW      = 160;
-    const sigH      = 56;
-
-    // Light background behind sig block
-    lastPage.drawRectangle({
-      x: marginX - 10, y: blockY - 50,
-      width: sigW + 20, height: sigH + 60,
-      color: rgb(0.97, 0.97, 0.97),
-      borderColor: rgb(0.85, 0.85, 0.85),
-      borderWidth: 0.5,
-      opacity: 1
-    });
-
-    // Signature image
-    lastPage.drawImage(sigImg, { x: marginX, y: blockY, width: sigW, height: sigH });
-
-    // Underline
-    lastPage.drawLine({
-      start: { x: marginX, y: blockY - 5 },
-      end:   { x: marginX + sigW, y: blockY - 5 },
-      thickness: 0.75,
-      color: rgb(0.3, 0.3, 0.3)
-    });
-
-    // Signer name
-    lastPage.drawText(signerName, {
-      x: marginX, y: blockY - 20,
-      size: 10, font: boldFont,
-      color: rgb(0.1, 0.1, 0.1)
-    });
-
-    // Date
-    lastPage.drawText(`Signed: ${signerDate}`, {
-      x: marginX, y: blockY - 33,
-      size: 9, font,
-      color: rgb(0.4, 0.4, 0.4)
-    });
-
-    // Document ID (small)
-    lastPage.drawText(`Document ID: ${token}`, {
-      x: marginX, y: blockY - 46,
-      size: 7, font,
-      color: rgb(0.65, 0.65, 0.65)
-    });
-
-    // ④ Save & encode
-    signedPdfBytes = await pdfLibDoc.save();
-    let bin = '';
-    signedPdfBytes.forEach(b => bin += String.fromCharCode(b));
-    const signedB64 = btoa(bin);
-
-    // ⑤ Send to Apps Script
-    const res  = await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action:     'complete',
-        token,
-        signedPdf:  signedB64,
-        signerName,
-        signerDate
+        action: 'complete', token: currentToken,
+        signedPdf: signedB64, signerName, signerDate,
+        sigImage: sigDataURL.split(',')[1], fileName: currentFileName
       })
     });
-
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-
     show('success-screen');
-
   } catch (err) {
-    alert('Error submitting: ' + err.message + '\n\nPlease try again or contact support.');
-    btn.disabled    = false;
-    btn.textContent = 'Submit Signed Document';
+    alert('Error submitting: ' + err.message);
+    btn.disabled = false; btn.textContent = 'Submit Signed Document';
   }
 }
 
-
-// ── DOWNLOAD HELPERS ─────────────────────────────────────────
-function downloadOriginal() {
-  if (pdfBytes) dl(pdfBytes, fileName);
-}
-
+// ── DOWNLOAD
 function downloadSigned() {
-  if (signedPdfBytes) dl(signedPdfBytes, fileName.replace(/\.pdf$/i, '') + '_signed.pdf');
+  if (signedPdfBytes) dl(signedPdfBytes, currentFileName.replace(/(\.[^.]+)$/, '_signed$1'));
 }
-
 function dl(bytes, name) {
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+  const url = URL.createObjectURL(new Blob([bytes]));
   Object.assign(document.createElement('a'), { href: url, download: name }).click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
- 
-// ── SCREEN HELPERS ───────────────────────────────────────────
-const SCREENS = ['login-screen','loading-screen','signing-screen','success-screen','error-screen'];
-
-function show(id) {
-  SCREENS.forEach(s => {
-    const el = document.getElementById(s);
-    el.classList.toggle('active', el.id === id);
-  });
-}
-
-function isActive(id) {
-  return document.getElementById(id).classList.contains('active');
-}
-
-function showError(msg) {
-  document.getElementById('error-message').textContent = msg;
-  show('error-screen');
-}
+// ── SCREENS
+const SCREENS = ['login-screen','loading-screen','dashboard-screen','signing-screen','success-screen','error-screen'];
+function show(id) { SCREENS.forEach(s => { document.getElementById(s).classList.toggle('active', s === id); }); }
+function isActive(id) { return document.getElementById(id).classList.contains('active'); }
+function setLoading(msg) { document.getElementById('loading-text').textContent = msg || 'Loading…'; show('loading-screen'); }
+function showError(msg) { document.getElementById('error-message').textContent = msg; show('error-screen'); }
 </script>
 </body>
 </html>
