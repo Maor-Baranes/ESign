@@ -348,18 +348,27 @@ async function handleUpload(event) {
   setLoading('Uploading document…');
   try {
     const base64 = await fileToBase64(file);
-    const url = `${APPS_SCRIPT_URL}?action=store&fileName=${encodeURIComponent(file.name)}&signerEmail=${encodeURIComponent(currentUser.email)}&senderEmail=${encodeURIComponent(currentUser.email)}&pdf=${encodeURIComponent(base64)}`;
-    const res  = await fetch(url);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        action:      'store',
+        pdf:         base64,
+        fileName:    file.name,
+        signerEmail: currentUser.email,
+        senderEmail: currentUser.email
+      })
+    });
+    // Response is opaque in no-cors — wait for Apps Script to finish then reload
+    await new Promise(r => setTimeout(r, 3000));
     event.target.value = '';
     await loadDashboard();
   } catch (err) {
     alert('Upload failed: ' + err.message);
     show('dashboard-screen');
   }
-}
-
+}  
+  
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -514,18 +523,13 @@ async function submitSigned() {
       signedPdfBytes = pdfBytes;
     }
 
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'complete', token: currentToken,
-        signedPdf: signedB64, signerName, signerDate,
-        sigImage: sigDataURL.split(',')[1], fileName: currentFileName
-      })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    show('success-screen');
+    await fetch(APPS_SCRIPT_URL, {
+  method: 'POST',
+  mode: 'no-cors',
+  body: JSON.stringify({...})
+});
+await new Promise(r => setTimeout(r, 3000));
+show('success-screen');
   } catch (err) {
     alert('Error submitting: ' + err.message);
     btn.disabled = false; btn.textContent = 'Submit Signed Document';
