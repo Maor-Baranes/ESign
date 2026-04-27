@@ -339,43 +339,33 @@ function triggerUpload() { document.getElementById('file-upload-input').click();
 async function handleUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
+  setLoading('Processing...');
 
-  setLoading('Uploading and converting...');
-  
   const reader = new FileReader();
   reader.onload = async () => {
+    const base64 = reader.result.split(',')[1];
     try {
-      // Get the base64 string
-      const base64 = reader.result.split(',')[1];
-      
-      const payload = {
-        action: 'store',
-        pdf: base64,
-        fileName: file.name,
-        signerEmail: currentUser.email,
-        senderEmail: currentUser.email
-      };
-
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // Essential for Google Apps Script
-        headers: { 'Content-Type': 'text/plain' }, 
-        body: JSON.stringify(payload)
+        mode: 'no-cors', // Keeping your original mode
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'store',
+          pdf: base64,
+          fileName: file.name,
+          signerEmail: currentUser.email,
+          senderEmail: currentUser.email
+        })
       });
 
-      // Wait 4 seconds for the script to convert and write to the sheet
+      // Wait for Apps Script to finish conversion/writing
       await new Promise(r => setTimeout(r, 4000));
-      
       event.target.value = '';
-      await loadDashboard(); 
+      await loadDashboard();
     } catch (err) {
-      console.error("Upload Error:", err);
       alert('Upload failed: ' + err.message);
-      show('dashboard-screen');
     }
   };
-  
-  reader.onerror = () => alert("Could not read file.");
   reader.readAsDataURL(file);
 }
   
@@ -528,8 +518,39 @@ async function submitSigned() {
     for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
+
+    // --- START OF FIX ---
+    // Use a loop to build the binary string. 
+    // This prevents the "Maximum call stack size exceeded" crash on large files.
+    let binary = '';
+    const bytes = new Uint8Array(signedPdfBytes);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
     const signedB64 = btoa(binary);
 
+    // This ensures that even if you uploaded a .docx, 
+    // the system now treats the final file as a signed .pdf
+    const finalFileName = currentFileName.replace(/\.[^.]+$/, '.pdf');
+
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'complete',
+        token: currentToken,
+        signedPdf: signedB64,
+        signerName: signerName,
+        signerDate: signerDate,
+        sigImage: sigDataURL.split(',')[1],
+        fileName: finalFileName
+      })
+    });
+    // --- END OF FIX ---
+
+    await new Promise(r => setTimeout(r, 3500));
+    show('success-screen');
     // THE FETCH: We do NOT check response.ok here
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
