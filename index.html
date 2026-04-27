@@ -225,7 +225,7 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
 // ============================================================
 //  CONFIGURATION — update before deploying
 // ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypjBL9LYW9nJ1mJbc3-RiguRg0uk9NOkvAomOFAk1RLLJzwS0OzpRtZQq_ObXNZa5p/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIMVK7wYHNsAIvbncKoiImrwLhKEzwkXV7vhG3YNom-x4xYwzCwcXtIiNUfs8GgZYI/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: '888racoon@gmail.com' },
@@ -339,32 +339,26 @@ function triggerUpload() { document.getElementById('file-upload-input').click();
 async function handleUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-  setLoading('Processing...');
+  setLoading('Uploading...');
 
   const reader = new FileReader();
   reader.onload = async () => {
     const base64 = reader.result.split(',')[1];
-    try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', // Keeping your original mode
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'store',
-          pdf: base64,
-          fileName: file.name,
-          signerEmail: currentUser.email,
-          senderEmail: currentUser.email
-        })
-      });
-
-      // Wait for Apps Script to finish conversion/writing
-      await new Promise(r => setTimeout(r, 4000));
-      event.target.value = '';
-      await loadDashboard();
-    } catch (err) {
-      alert('Upload failed: ' + err.message);
-    }
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'store',
+        pdf: base64,
+        fileName: file.name,
+        signerEmail: currentUser.email,
+        senderEmail: currentUser.email
+      })
+    });
+    await new Promise(r => setTimeout(r, 4000)); // Wait for conversion
+    event.target.value = '';
+    await loadDashboard();
   };
   reader.readAsDataURL(file);
 }
@@ -498,30 +492,37 @@ async function submitSigned() {
     const signerDate = document.getElementById('signer-date').value;
     const sigCanvas  = document.getElementById('sig-canvas');
     const sigDataURL = sigCanvas.toDataURL('image/png');
-    const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
+    
+    // Convert signature dataURL to bytes
+    const sigBytes = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    // Process as PDF
+    // 1. Load the PDF (Backend conversion ensures docx/xlsx are now PDFs)
     const pdfLibDoc = await PDFDocument.load(pdfBytes);
     const pages = pdfLibDoc.getPages();
     const lastPage = pages[pages.length - 1];
+    
+    // 2. Embed the signature and text
     const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
     const sigImg = await pdfLibDoc.embedPng(sigBytes);
     
-    lastPage.drawImage(sigImg, { x: 50, y: 100, width: 150, height: 50 });
-    lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { x: 50, y: 85, size: 10, font });
+    lastPage.drawImage(sigImg, { 
+      x: 50, 
+      y: 100, 
+      width: 150, 
+      height: 50 
+    });
     
+    lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { 
+      x: 50, 
+      y: 85, 
+      size: 10, 
+      font 
+    });
+    
+    // 3. Save the modified PDF
     signedPdfBytes = await pdfLibDoc.save();
     
-    // Robust Base64 conversion
-    let binary = '';
-    const bytes = new Uint8Array(signedPdfBytes);
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-
-    // --- START OF FIX ---
-    // Use a loop to build the binary string. 
-    // This prevents the "Maximum call stack size exceeded" crash on large files.
+    // 4. Robust Binary-to-Base64 conversion (Fixes the large-file crash)
     let binary = '';
     const bytes = new Uint8Array(signedPdfBytes);
     for (let i = 0; i < bytes.byteLength; i++) {
@@ -529,52 +530,31 @@ async function submitSigned() {
     }
     const signedB64 = btoa(binary);
 
-    // This ensures that even if you uploaded a .docx, 
-    // the system now treats the final file as a signed .pdf
-    const finalFileName = currentFileName.replace(/\.[^.]+$/, '.pdf');
+    // 5. Submit via no-cors
+    const payload = {
+      action: 'complete',
+      token: currentToken,
+      signedPdf: signedB64,
+      signerName: signerName,
+      signerDate: signerDate,
+      sigImage: sigDataURL.split(',')[1],
+      fileName: currentFileName.replace(/\.[^.]+$/, '.pdf') // Ensure it saves as .pdf
+    };
 
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'complete',
-        token: currentToken,
-        signedPdf: signedB64,
-        signerName: signerName,
-        signerDate: signerDate,
-        sigImage: sigDataURL.split(',')[1],
-        fileName: finalFileName
-      })
-    });
-    // --- END OF FIX ---
-
-    await new Promise(r => setTimeout(r, 3500));
-    show('success-screen');
-    // THE FETCH: We do NOT check response.ok here
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors', 
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'complete',
-        token: currentToken,
-        signedPdf: signedB64,
-        signerName: signerName,
-        fileName: currentFileName.replace(/\.[^.]+$/, '.pdf')
-      })
+      body: JSON.stringify(payload)
     });
 
-    // Assume success because no-cors won't tell us otherwise
-    // We wait 3.5 seconds to give the backend time to finish
+    // Wait for backend to move file and update sheet
     await new Promise(r => setTimeout(r, 3500));
     show('success-screen');
 
   } catch (err) {
-    // This will now only trigger if the network is actually down 
-    // or the PDF-lib processing crashes.
-    console.error("Signing Error:", err);
-    alert('Submission encountered a local error: ' + err.message);
+    console.error("Submission Error:", err);
+    alert('Submission failed: ' + err.message);
     btn.disabled = false;
     btn.textContent = 'Submit Signed Document';
   }
