@@ -340,35 +340,42 @@ async function handleUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  setLoading('Converting and uploading...');
+  setLoading('Uploading and converting...');
   
   const reader = new FileReader();
-  reader.onload = async (e) => {
-    const base64 = e.target.result.split(',')[1];
-    
+  reader.onload = async () => {
     try {
+      // Get the base64 string
+      const base64 = reader.result.split(',')[1];
+      
+      const payload = {
+        action: 'store',
+        pdf: base64,
+        fileName: file.name,
+        signerEmail: currentUser.email,
+        senderEmail: currentUser.email
+      };
+
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // Essential to bypass CORS errors
-        headers: { 'Content-Type': 'text/plain' }, // Must be text/plain for no-cors
-        body: JSON.stringify({
-          action: 'store',
-          pdf: base64,
-          fileName: file.name,
-          signerEmail: currentUser.email,
-          senderEmail: currentUser.email
-        })
+        mode: 'no-cors', // Essential for Google Apps Script
+        headers: { 'Content-Type': 'text/plain' }, 
+        body: JSON.stringify(payload)
       });
 
-      // Wait for the conversion and sheet update to finish on the server
+      // Wait 4 seconds for the script to convert and write to the sheet
       await new Promise(r => setTimeout(r, 4000));
+      
       event.target.value = '';
       await loadDashboard(); 
     } catch (err) {
+      console.error("Upload Error:", err);
       alert('Upload failed: ' + err.message);
       show('dashboard-screen');
     }
   };
+  
+  reader.onerror = () => alert("Could not read file.");
   reader.readAsDataURL(file);
 }
   
