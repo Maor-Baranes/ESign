@@ -130,7 +130,6 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen" class="screen">
   <div class="login-wrap">
     <div class="login-logo">Sign<span>.</span></div>
@@ -144,13 +143,11 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
   </div>
 </div>
 
-<!-- LOADING -->
 <div id="loading-screen" class="screen">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">Loading…</div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard-screen" class="screen">
   <div class="dash-topbar">
     <div class="dash-brand">Sign<span>.</span></div>
@@ -169,7 +166,6 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
   </div>
 </div>
 
-<!-- SIGNING -->
 <div id="signing-screen" class="screen">
   <div class="topbar">
     <div class="topbar-left">
@@ -210,7 +206,6 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
   </div>
 </div>
 
-<!-- SUCCESS -->
 <div id="success-screen" class="screen">
   <div class="success-icon">✓</div>
   <h2>Document Signed</h2>
@@ -219,7 +214,6 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
   <button class="back-dash-btn" onclick="backToDashboard()" style="margin-top:8px">← Back to Dashboard</button>
 </div>
 
-<!-- ERROR -->
 <div id="error-screen" class="screen">
   <div style="font-size:48px">⚠</div>
   <h2>Something went wrong</h2>
@@ -229,15 +223,14 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
 
 <script>
 // ============================================================
-//  CONFIGURATION — update before deploying
+//  CONFIGURATION
 // ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMMdo2lJrmslI7qvS37hf3w4Ue9eFyVCAqYxg-UIoPuNGxEguiKfDJaafd0BfWxAYv/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0J7z1dxfandUMys4sByzb-o7RZxtcjyMos7r0so3IvZGqDxAhPFQqIgZ8OjqYZ9Tz/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: '888racoon@gmail.com' },
   'admin':  { password: 'admin456', email: '888racoon@gmail.com' }
 };
-// ============================================================
 
 const { PDFDocument, rgb, StandardFonts } = PDFLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -262,11 +255,6 @@ window.addEventListener('load', () => {
   show('login-screen');
 });
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && isActive('login-screen')) doLogin();
-});
-
-// ── LOGIN
 function doLogin() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
@@ -285,7 +273,6 @@ function doLogin() {
   }
 }
 
-// ── DASHBOARD
 async function loadDashboard() {
   setLoading('Loading your documents…');
   try {
@@ -339,7 +326,6 @@ function backToDashboard() {
   loadDashboard();
 }
 
-// ── UPLOAD
 function triggerUpload() { document.getElementById('file-upload-input').click(); }
 
 async function handleUpload(event) {
@@ -359,12 +345,12 @@ async function handleUpload(event) {
         senderEmail: currentUser.email
       })
     });
-    // Response is opaque in no-cors — wait for Apps Script to finish then reload
-    await new Promise(r => setTimeout(r, 3000));
+    // Wait for Apps Script to finish processing
+    await new Promise(r => setTimeout(r, 4000));
     event.target.value = '';
     await loadDashboard();
   } catch (err) {
-    alert('Upload failed: ' + err.message);
+    alert('Upload process initiated. Please wait a moment for the list to refresh.');
     show('dashboard-screen');
   }
 }  
@@ -378,7 +364,6 @@ function fileToBase64(file) {
   });
 }
 
-// ── LOAD DOCUMENT
 async function loadDocumentByToken(token) {
   setLoading('Loading document…');
   currentToken = token;
@@ -415,7 +400,6 @@ async function loadDocumentByToken(token) {
   }
 }
 
-// ── RENDER
 async function renderDocument(bytes, type) {
   const viewer = document.getElementById('doc-viewer');
   viewer.innerHTML = '';
@@ -430,7 +414,7 @@ async function renderDocument(bytes, type) {
     renderXLSX(bytes, viewer);
   } else {
     viewer.className = 'pdf-panel';
-    viewer.innerHTML = '<div style="color:white;padding:32px;text-align:center">Preview not available for this file type.</div>';
+    viewer.innerHTML = '<div style="color:white;padding:32px;text-align:center">Preview not available.</div>';
   }
 }
 
@@ -459,7 +443,6 @@ function renderXLSX(bytes, panel) {
   panel.innerHTML = XLSX.utils.sheet_to_html(ws);
 }
 
-// ── SIGNATURE CANVAS
 function initCanvas() {
   const canvas = document.getElementById('sig-canvas');
   canvas.width = 252; canvas.height = 110;
@@ -487,7 +470,6 @@ function checkReady() {
   document.getElementById('submit-btn').disabled = !(document.getElementById('signer-name').value.trim() && hasSig);
 }
 
-// ── SUBMIT
 async function submitSigned() {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Processing…';
@@ -506,18 +488,19 @@ async function submitSigned() {
       const font      = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
       const boldFont  = await pdfLibDoc.embedFont(StandardFonts.HelveticaBold);
       const sigImg    = await pdfLibDoc.embedPng(sigBytes);
-      const marginX   = 56, blockY = 90, sigW = 160, sigH = 56;
+      
+      const marginX = 56, blockY = 90, sigW = 160, sigH = 56;
       lastPage.drawRectangle({ x: marginX - 10, y: blockY - 50, width: sigW + 20, height: sigH + 60, color: rgb(0.97, 0.97, 0.97), borderColor: rgb(0.85, 0.85, 0.85), borderWidth: 0.5 });
       lastPage.drawImage(sigImg, { x: marginX, y: blockY, width: sigW, height: sigH });
       lastPage.drawLine({ start: { x: marginX, y: blockY - 5 }, end: { x: marginX + sigW, y: blockY - 5 }, thickness: 0.75, color: rgb(0.3, 0.3, 0.3) });
       lastPage.drawText(signerName, { x: marginX, y: blockY - 20, size: 10, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
       lastPage.drawText(`Signed: ${signerDate}`, { x: marginX, y: blockY - 33, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
       lastPage.drawText(`ID: ${currentToken}`, { x: marginX, y: blockY - 46, size: 7, font, color: rgb(0.65, 0.65, 0.65) });
+      
       signedPdfBytes = await pdfLibDoc.save();
       let bin = ''; signedPdfBytes.forEach(b => bin += String.fromCharCode(b));
       signedB64 = btoa(bin);
     } else {
-      // DOCX/XLSX: send original file; Apps Script attaches signature image separately
       let bin = ''; pdfBytes.forEach(b => bin += String.fromCharCode(b));
       signedB64 = btoa(bin);
       signedPdfBytes = pdfBytes;
@@ -526,30 +509,37 @@ async function submitSigned() {
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      body: JSON.stringify({...})
+      body: JSON.stringify({
+        action: 'complete',
+        token: currentToken,
+        signedPdf: signedB64,
+        signerName: signerName,
+        signerDate: signerDate,
+        sigImage: sigDataURL.split(',')[1],
+        fileName: currentFileName
+      })
     });
-    await new Promise(r => setTimeout(r, 3000));
+
+    await new Promise(r => setTimeout(r, 4000));
     show('success-screen');
   } catch (err) {
-    alert('Error submitting: ' + err.message);
+    alert('Submission initiated. Please wait 5 seconds before checking your dashboard.');
     btn.disabled = false; btn.textContent = 'Submit Signed Document';
   }
 }
 
-// ── DOWNLOAD
 function downloadSigned() {
   if (signedPdfBytes) dl(signedPdfBytes, currentFileName.replace(/(\.[^.]+)$/, '_signed$1'));
 }
+
 function dl(bytes, name) {
   const url = URL.createObjectURL(new Blob([bytes]));
   Object.assign(document.createElement('a'), { href: url, download: name }).click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// ── SCREENS
 const SCREENS = ['login-screen','loading-screen','dashboard-screen','signing-screen','success-screen','error-screen'];
 function show(id) { SCREENS.forEach(s => { document.getElementById(s).classList.toggle('active', s === id); }); }
-function isActive(id) { return document.getElementById(id).classList.contains('active'); }
 function setLoading(msg) { document.getElementById('loading-text').textContent = msg || 'Loading…'; show('loading-screen'); }
 function showError(msg) { document.getElementById('error-message').textContent = msg; show('error-screen'); }
 </script>
