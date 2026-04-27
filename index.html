@@ -494,29 +494,35 @@ async function submitSigned() {
     const sigDataURL = sigCanvas.toDataURL('image/png');
     const sigBytes   = Uint8Array.from(atob(sigDataURL.split(',')[1]), c => c.charCodeAt(0));
 
-    // Load PDF (Backend ensures this is always PDF now)
-    const pdfLibDoc = await PDFDocument.load(pdfBytes);
-    const pages     = pdfLibDoc.getPages();
-    const lastPage  = pages[pages.length - 1];
-    const font      = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
-    const sigImg    = await pdfLibDoc.embedPng(sigBytes);
-    
-    // Draw signature
-    lastPage.drawImage(sigImg, { x: 50, y: 100, width: 150, height: 50 });
-    lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { x: 50, y: 85, size: 10, font });
-    
-    signedPdfBytes = await pdfLibDoc.save();
+    let finalBytes;
 
-    // PERFORMANCE FIX: This solves the "Nothing Happens" hang
-    let binary = '';
-    const uint8 = new Uint8Array(signedPdfBytes);
-    const len = uint8.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(uint8[i]);
+    // 1. Process based on file type (Inspired by your OG logic)
+    if (currentFileType === 'pdf') {
+      const pdfLibDoc = await PDFDocument.load(pdfBytes);
+      const pages = pdfLibDoc.getPages();
+      const lastPage = pages[pages.length - 1];
+      const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
+      const sigImg = await pdfLibDoc.embedPng(sigBytes);
+      
+      // Draw signature
+      lastPage.drawImage(sigImg, { x: 50, y: 120, width: 150, height: 50 });
+      lastPage.drawText(`Digitally signed by ${signerName} on ${signerDate}`, { x: 50, y: 105, size: 10, font });
+      
+      finalBytes = await pdfLibDoc.save();
+    } else {
+      // DOCX/XLSX: Use the original file bytes as-is
+      finalBytes = pdfBytes;
     }
-    const signedB64 = btoa(binary);
 
-    // POST using your original architecture
+    // 2. THE REFINED FIX: Use FileReader to convert to Base64 instantly
+    // This is what stops the "nothing happens" hang for large files
+    const signedB64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(new Blob([finalBytes]));
+    });
+
+    // 3. Submit using your existing no-cors fetch
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -526,15 +532,20 @@ async function submitSigned() {
         token: currentToken,
         signedPdf: signedB64,
         signerName: signerName,
-        fileName: currentFileName.replace(/\.[^.]+$/, '.pdf')
+        signerDate: signerDate,
+        sigImage: sigDataURL.split(',')[1],
+        fileName: currentFileName.replace(/\.[^.]+$/, (currentFileType === 'pdf' ? '.pdf' : '$&'))
       })
     });
 
+    // Wait for backend processing
     await new Promise(r => setTimeout(r, 4000));
     show('success-screen');
+
   } catch (err) {
-    alert('Error: ' + err.message);
-    btn.disabled = false; 
+    console.error("Submission Error:", err);
+    alert('Submission failed: ' + err.message);
+    btn.disabled = false;
     btn.textContent = 'Submit Signed Document';
   }
 }
