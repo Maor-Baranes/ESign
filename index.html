@@ -231,7 +231,7 @@ canvas.pdf-page { display: block; background: white; box-shadow: 0 6px 30px rgba
 // ============================================================
 //  CONFIGURATION — update before deploying
 // ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxr2v2bDucbyUVGcQT2C27l8z64BRiigLqZeNeJXRYoj8w4Fit0V_y1qLasMPsqP0FN/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMMdo2lJrmslI7qvS37hf3w4Ue9eFyVCAqYxg-UIoPuNGxEguiKfDJaafd0BfWxAYv/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: '888racoon@gmail.com' },
@@ -348,17 +348,8 @@ async function handleUpload(event) {
   setLoading('Uploading document…');
   try {
     const base64 = await fileToBase64(file);
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action:      'store',
-        pdf:         base64,
-        fileName:    file.name,
-        signerEmail: currentUser.email,
-        senderEmail: currentUser.email
-      })
-    });
+    const url = `${APPS_SCRIPT_URL}?action=store&fileName=${encodeURIComponent(file.name)}&signerEmail=${encodeURIComponent(currentUser.email)}&senderEmail=${encodeURIComponent(currentUser.email)}&pdf=${encodeURIComponent(base64)}`;
+    const res  = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     event.target.value = '';
