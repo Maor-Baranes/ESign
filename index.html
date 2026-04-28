@@ -1,578 +1,181 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת חתימה אלקטרונית</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>פורטל חתימה על מסמכים</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-/* ══════════════════════════════════════════
-   TOKENS
-══════════════════════════════════════════ */
 :root {
-  --ink:        #111;
-  --ink-mid:    #444;
-  --ink-light:  #888;
-  --border:     #e0e0e0;
-  --bg:         #f5f5f0;
-  --white:      #ffffff;
-  --blue:       #1d4ed8;
-  --blue-dk:    #1e3a8a;
-  --green:      #16a34a;
-  --red:        #dc2626;
-  --yellow-bg:  #fef9c3;
-  --yellow-txt: #854d0e;
-  --green-bg:   #dcfce7;
-  --green-txt:  #166534;
-  --r:          10px;
-  --shadow:     0 2px 20px rgba(0,0,0,0.09);
+  --ink:       #0f0f0f;
+  --ink-light: #555;
+  --border:    #e2e2e2;
+  --bg:        #f7f6f3;
+  --white:     #ffffff;
+  --blue:      #1d4ed8;
+  --blue-dark: #1e3a8a;
+  --red:       #dc2626;
+  --green:     #16a34a;
+  --r:         10px;
+  --sh:        0 2px 16px rgba(0,0,0,0.08);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Heebo', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  min-height: 100vh;
-  direction: rtl;
-}
-
-/* ══════════════════════════════════════════
-   SCREENS
-══════════════════════════════════════════ */
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; direction: rtl; }
 .screen { display: none; }
 .screen.active { display: flex; }
 
-/* ══════════════════════════════════════════
-   LOADING
-══════════════════════════════════════════ */
-#loading-screen {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  gap: 18px;
-}
-.spinner {
-  width: 38px; height: 38px;
-  border: 3px solid var(--border);
-  border-top-color: var(--blue);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
+/* ── LOADING ── */
+#loading-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .75s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 14px; color: var(--ink-light); }
 
-/* ══════════════════════════════════════════
-   LOGIN
-══════════════════════════════════════════ */
-#login-screen {
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-}
-.login-box {
-  width: 100%;
-  max-width: 420px;
-  padding: 24px;
-}
-.brand { font-size: 32px; font-weight: 700; margin-bottom: 4px; letter-spacing: -1px; }
-.brand span { color: var(--blue); }
-.brand-sub { font-size: 14px; color: var(--ink-light); margin-bottom: 32px; }
-.card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 32px;
-  box-shadow: var(--shadow);
-}
+/* ── LOGIN ── */
+#login-screen { align-items: center; justify-content: center; min-height: 100vh; }
+.login-wrap { width: 100%; max-width: 400px; padding: 24px; }
+.login-logo { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 6px; }
+.login-logo span { color: var(--blue); }
+.login-sub { font-size: 14px; color: var(--ink-light); margin-bottom: 36px; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 32px; box-shadow: var(--sh); }
 .field { margin-bottom: 18px; }
-.field label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--ink-light);
-  margin-bottom: 7px;
-}
-.field input {
-  width: 100%;
-  padding: 11px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r);
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  outline: none;
-  transition: border-color .18s;
-  direction: ltr;
-  text-align: right;
-}
+.field label { display: block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 7px; }
+.field input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; transition: border-color .18s; direction: ltr; text-align: right; }
 .field input:focus { border-color: var(--blue); }
 .err { display: none; font-size: 13px; color: var(--red); margin-bottom: 14px; }
-.btn-primary {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: var(--r);
-  background: var(--ink);
-  color: var(--white);
-  font-family: 'Heebo', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity .15s;
-}
-.btn-primary:hover { opacity: .88; }
+.btn-primary { width: 100%; padding: 13px; border: none; border-radius: var(--r); background: var(--ink); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+.btn-primary:hover { opacity: .9; }
 
-/* ══════════════════════════════════════════
-   DASHBOARD
-══════════════════════════════════════════ */
+/* ── DASHBOARD ── */
 #dashboard-screen { flex-direction: column; min-height: 100vh; }
-.topbar {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.topbar-brand { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.topbar-brand { font-family: 'DM Serif Display', serif; font-size: 22px; }
 .topbar-brand span { color: var(--blue); }
 .topbar-user { font-size: 13px; color: var(--ink-light); }
-.dash-body {
-  max-width: 860px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 36px 24px;
-}
-.dash-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 32px;
-}
-.dash-title { font-size: 26px; font-weight: 700; letter-spacing: -.5px; }
-.upload-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 20px;
-  background: var(--blue);
-  color: var(--white);
-  border: none;
-  border-radius: var(--r);
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity .15s;
-}
+.dash-body { max-width: 860px; width: 100%; margin: 0 auto; padding: 36px 24px; }
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+.dash-title { font-family: 'DM Serif Display', serif; font-size: 26px; }
+.upload-btn { display: flex; align-items: center; gap: 8px; padding: 11px 20px; background: var(--blue); color: white; border: none; border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
 .upload-btn:hover { opacity: .88; }
 #file-input { display: none; }
-.section-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ink-light);
-  margin-bottom: 10px;
-  margin-top: 28px;
-}
+.section-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; margin-top: 28px; }
 .doc-list { display: flex; flex-direction: column; gap: 8px; }
-.doc-card {
-  background: var(--white);
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 15px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: border-color .18s, box-shadow .18s;
-}
+.doc-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; transition: border-color .18s, box-shadow .18s; }
 .doc-card.clickable { cursor: pointer; }
-.doc-card.clickable:hover {
-  border-color: var(--blue);
-  box-shadow: 0 2px 12px rgba(29,78,216,.08);
-}
+.doc-card.clickable:hover { border-color: var(--blue); box-shadow: 0 2px 12px rgba(29,78,216,.08); }
 .doc-left { display: flex; align-items: center; gap: 14px; }
-.doc-icon {
-  width: 42px; height: 42px;
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; flex-shrink: 0;
-}
+.doc-icon { width: 42px; height: 42px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 .doc-icon.pdf  { background: #fee2e2; }
 .doc-icon.docx { background: #dbeafe; }
 .doc-icon.xlsx { background: #dcfce7; }
 .doc-icon.other{ background: #f3f4f6; }
 .doc-name { font-size: 14px; font-weight: 600; }
 .doc-date { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
-.badge {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 20px;
-  flex-shrink: 0;
-}
-.badge.pending   { background: var(--yellow-bg); color: var(--yellow-txt); }
-.badge.completed { background: var(--green-bg);  color: var(--green-txt);  }
-.empty {
-  background: var(--white);
-  border: 1.5px dashed var(--border);
-  border-radius: 12px;
-  padding: 28px;
-  text-align: center;
-  color: var(--ink-light);
-  font-size: 14px;
-}
+.badge { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; flex-shrink: 0; }
+.badge.pending   { background: #fef9c3; color: #854d0e; }
+.badge.completed { background: #dcfce7; color: #166534; }
+.empty { background: var(--white); border: 1.5px dashed var(--border); border-radius: 12px; padding: 28px; text-align: center; color: var(--ink-light); font-size: 14px; }
 
-/* ══════════════════════════════════════════
-   VIEWER / SIGNING SCREEN
-══════════════════════════════════════════ */
+/* ── VIEWER ── */
 #viewer-screen { flex-direction: column; min-height: 100vh; }
-.viewer-topbar {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-}
+.viewer-topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
 .vtop-left { display: flex; flex-direction: column; gap: 2px; }
-.vtop-brand { font-size: 18px; font-weight: 700; }
+.vtop-brand { font-family: 'DM Serif Display', serif; font-size: 18px; }
 .vtop-file { font-size: 12px; color: var(--ink-light); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vtop-right { display: flex; gap: 10px; align-items: center; }
-.btn-back {
-  background: none;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r);
-  padding: 9px 16px;
-  font-family: 'Heebo', sans-serif;
-  font-size: 13px;
-  cursor: pointer;
-  color: var(--ink);
-  transition: border-color .15s;
-}
+.btn-back { background: none; border: 1.5px solid var(--border); border-radius: var(--r); padding: 9px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; color: var(--ink); }
 .btn-back:hover { border-color: var(--ink); }
-.btn-submit {
-  padding: 10px 22px;
-  background: var(--blue);
-  color: var(--white);
-  border: none;
-  border-radius: var(--r);
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background .15s;
-  white-space: nowrap;
-}
-.btn-submit:hover { background: var(--blue-dk); }
+.btn-submit { padding: 10px 22px; background: var(--blue); color: var(--white); border: none; border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-submit:hover { background: var(--blue-dark); }
 .btn-submit:disabled { opacity: .42; cursor: not-allowed; }
+.viewer-body { display: flex; flex: 1; height: calc(100vh - 57px); overflow: hidden; }
 
-/* Document + signature layout */
-.viewer-body {
-  display: flex;
-  flex: 1;
-  height: calc(100vh - 57px);
-  overflow: hidden;
-}
-
-/* Left: document */
-.doc-area {
-  flex: 1;
-  overflow-y: auto;
-  background: #3a3a3a;
-  padding: 28px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-}
-
-/* PDF pages */
-.page-wrap {
-  position: relative;
-  margin-bottom: 20px;
-  box-shadow: 0 6px 32px rgba(0,0,0,.4);
-}
+/* PDF viewer */
+.doc-area { flex: 1; overflow-y: auto; background: #3a3a3a; padding: 28px 20px; display: flex; flex-direction: column; align-items: center; }
+.page-wrap { position: relative; margin-bottom: 20px; box-shadow: 0 6px 32px rgba(0,0,0,.4); }
 canvas.pdf-page { display: block; max-width: 100%; background: white; }
 
-/* Signature strip — overlaid visually at the bottom of the last page */
+/* Signature strip — appended to last PDF page */
 .sig-strip {
   background: #fff;
-  border-top: 2px solid #e0e0e0;
+  border-top: 2px solid #ccc;
   width: 100%;
-  padding: 18px 24px 14px;
+  padding: 16px 24px 12px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   direction: rtl;
 }
 .strip-field { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.strip-line {
-  width: 100%;
-  border-bottom: 1.5px solid #333;
-  margin-bottom: 6px;
-  min-height: 44px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 4px;
-}
-.strip-label {
-  font-size: 11px;
-  color: #555;
-  font-weight: 600;
-  letter-spacing: .04em;
-}
-.strip-input {
-  border: none;
-  outline: none;
-  background: transparent;
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  text-align: center;
-  width: 100%;
-}
-.strip-date-val {
-  font-size: 13px;
-  color: var(--ink-mid);
-  text-align: center;
-}
+.strip-line { width: 100%; border-bottom: 1.5px solid #333; margin-bottom: 5px; min-height: 42px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
+.strip-label { font-size: 10px; color: #666; font-weight: 600; letter-spacing: .04em; }
+.strip-input { border: none; outline: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); text-align: center; width: 100%; }
+.strip-date-val { font-size: 12px; color: #555; text-align: center; }
+.sig-canvas-wrap { width: 180px; height: 58px; position: relative; cursor: crosshair; border-bottom: 1.5px solid #333; margin-bottom: 5px; }
+#sig-canvas { width: 180px; height: 58px; display: block; touch-action: none; }
+.sig-ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #bbb; pointer-events: none; }
+.clear-link { font-size: 10px; color: var(--ink-light); cursor: pointer; text-decoration: underline; background: none; border: none; font-family: 'DM Sans', sans-serif; }
 
-/* Signature canvas inside strip */
-.sig-canvas-wrap {
-  width: 180px;
-  height: 60px;
-  position: relative;
-  cursor: crosshair;
-  border-bottom: 1.5px solid #333;
-  margin-bottom: 6px;
-}
-#sig-canvas {
-  width: 180px;
-  height: 60px;
-  display: block;
-  touch-action: none;
-}
-.sig-ghost {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #bbb;
-  pointer-events: none;
-}
-.clear-link {
-  font-size: 10px;
-  color: var(--ink-light);
-  cursor: pointer;
-  text-decoration: underline;
-  background: none;
-  border: none;
-  font-family: 'Heebo', sans-serif;
-  margin-top: 2px;
-}
-
-/* DOCX / XLSX viewers */
-.docx-area {
-  flex: 1;
-  overflow-y: auto;
-  background: white;
-  padding: 48px 56px;
-  font-size: 14px;
-  line-height: 1.75;
-  direction: ltr;
-  text-align: left;
-}
-.xlsx-area {
-  flex: 1;
-  overflow: auto;
-  background: white;
-  padding: 24px;
-}
+/* DOCX / XLSX */
+.docx-area { flex: 1; overflow-y: auto; background: white; padding: 48px 56px; font-size: 14px; line-height: 1.75; direction: ltr; text-align: left; }
+.xlsx-area { flex: 1; overflow: auto; background: white; padding: 24px; }
 .xlsx-area table { border-collapse: collapse; font-size: 13px; }
 .xlsx-area td, .xlsx-area th { border: 1px solid #ddd; padding: 6px 12px; }
 .xlsx-area th { background: #f3f4f6; font-weight: 600; }
 
-/* Non-PDF signature panel (sidebar) */
-.sign-sidebar {
-  width: 280px;
-  background: var(--white);
-  border-right: 1px solid var(--border);
-  padding: 28px 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.sidebar-title { font-size: 18px; font-weight: 700; }
+/* Sidebar for non-PDF */
+.sign-sidebar { width: 280px; background: var(--white); border-right: 1px solid var(--border); padding: 28px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+.sidebar-title { font-family: 'DM Serif Display', serif; font-size: 18px; }
 .sidebar-hr { height: 1px; background: var(--border); margin: 0 -20px; }
-.sf-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--ink-light);
-  margin-bottom: 7px;
-}
-.sf-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r);
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  outline: none;
-  transition: border-color .18s;
-}
+.sf-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 7px; }
+.sf-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; }
 .sf-input:focus { border-color: var(--blue); }
-.sf-canvas-wrap {
-  border: 1.5px dashed var(--border);
-  border-radius: var(--r);
-  background: #fafafa;
-  position: relative;
-  overflow: hidden;
-}
-#sig-canvas-side {
-  display: block;
-  width: 100%;
-  height: 100px;
-  cursor: crosshair;
-  touch-action: none;
-}
-.sf-ghost {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #bbb;
-  pointer-events: none;
-}
-.legal {
-  font-size: 11px;
-  color: #aaa;
-  line-height: 1.6;
-  border-top: 1px solid var(--border);
-  padding-top: 14px;
-}
-.already-signed {
-  background: var(--green-bg);
-  color: var(--green-txt);
-  border-radius: var(--r);
-  padding: 14px;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-}
+.sf-canvas-wrap { border: 1.5px dashed var(--border); border-radius: var(--r); background: #fafafa; position: relative; overflow: hidden; }
+#sig-canvas-side { display: block; width: 100%; height: 100px; cursor: crosshair; touch-action: none; }
+.sf-ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #bbb; pointer-events: none; }
+.legal { font-size: 11px; color: #aaa; line-height: 1.6; border-top: 1px solid var(--border); padding-top: 14px; }
+.already-signed { background: #dcfce7; color: #166534; border-radius: var(--r); padding: 14px; font-size: 13px; font-weight: 600; text-align: center; }
 
-/* ══════════════════════════════════════════
-   SUCCESS
-══════════════════════════════════════════ */
-#success-screen {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  text-align: center;
-  padding: 32px;
-  gap: 14px;
-}
-.success-icon {
-  width: 76px; height: 76px;
-  background: var(--green-bg);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34px;
-}
-#success-screen h2 { font-size: 30px; font-weight: 700; letter-spacing: -.5px; }
+/* ── SUCCESS ── */
+#success-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 14px; }
+.success-icon { width: 76px; height: 76px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; }
+#success-screen h2 { font-family: 'DM Serif Display', serif; font-size: 30px; }
 #success-screen p  { font-size: 15px; color: var(--ink-light); max-width: 380px; line-height: 1.6; }
-.btn-download {
-  padding: 12px 28px;
-  background: var(--green);
-  color: white;
-  border: none;
-  border-radius: var(--r);
-  font-family: 'Heebo', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity .15s;
-}
+.btn-download { padding: 12px 28px; background: var(--green); color: white; border: none; border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
 .btn-download:hover { opacity: .88; }
-.btn-ghost2 {
-  padding: 10px 22px;
-  background: none;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r);
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  cursor: pointer;
-  color: var(--ink);
-}
+.btn-ghost2 { padding: 10px 22px; background: none; border: 1.5px solid var(--border); border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; color: var(--ink); }
 
-/* ══════════════════════════════════════════
-   ERROR
-══════════════════════════════════════════ */
-#error-screen {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  text-align: center;
-  padding: 32px;
-  gap: 12px;
-}
-#error-screen h2 { font-size: 26px; font-weight: 700; }
+/* ── ERROR ── */
+#error-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 12px; }
+#error-screen h2 { font-family: 'DM Serif Display', serif; font-size: 26px; }
 #error-screen p  { font-size: 14px; color: var(--ink-light); max-width: 380px; line-height: 1.6; }
 
-/* ══════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════ */
 @media (max-width: 680px) {
   .viewer-body { flex-direction: column; height: auto; }
   .sign-sidebar { width: 100%; border-right: none; border-top: 1px solid var(--border); }
   .doc-area { padding: 12px 8px; }
   .sig-strip { flex-direction: column; align-items: center; }
   .dash-body { padding: 20px 14px; }
-  .topbar { padding: 12px 16px; }
 }
 </style>
 </head>
 <body>
 
-<!-- ══ LOADING ══ -->
+<!-- LOADING -->
 <div id="loading-screen" class="screen">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">טוען…</div>
 </div>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div id="login-screen" class="screen">
-  <div class="login-box">
-    <div class="brand">חתימה<span>.</span></div>
-    <div class="brand-sub">מערכת חתימה אלקטרונית מאובטחת</div>
+  <div class="login-wrap">
+    <div class="login-logo">חתימה<span>.</span></div>
+    <div class="login-sub">מערכת חתימה אלקטרונית מאובטחת</div>
     <div class="card">
       <div class="field">
         <label>שם משתמש</label>
@@ -588,7 +191,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
   </div>
 </div>
 
-<!-- ══ DASHBOARD ══ -->
+<!-- DASHBOARD -->
 <div id="dashboard-screen" class="screen">
   <div class="topbar">
     <div class="topbar-brand">חתימה<span>.</span></div>
@@ -597,9 +200,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
   <div class="dash-body">
     <div class="dash-header">
       <div class="dash-title">המסמכים שלי</div>
-      <button class="upload-btn" onclick="document.getElementById('file-input').click()">
-        ＋ העלה מסמך
-      </button>
+      <button class="upload-btn" onclick="document.getElementById('file-input').click()">＋ העלה מסמך</button>
       <input type="file" id="file-input" accept=".pdf,.docx,.doc,.xlsx,.xls" onchange="handleUpload(event)">
     </div>
     <div class="section-label">ממתינים לחתימה</div>
@@ -609,7 +210,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
   </div>
 </div>
 
-<!-- ══ VIEWER / SIGNING ══ -->
+<!-- VIEWER -->
 <div id="viewer-screen" class="screen">
   <div class="viewer-topbar">
     <div class="vtop-left">
@@ -621,22 +222,19 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
       <button class="btn-submit" id="submit-btn" onclick="submitSigned()" disabled>שלח מסמך חתום</button>
     </div>
   </div>
-
-  <div class="viewer-body" id="viewer-body">
-    <!-- filled dynamically -->
-  </div>
+  <div class="viewer-body" id="viewer-body"></div>
 </div>
 
-<!-- ══ SUCCESS ══ -->
+<!-- SUCCESS -->
 <div id="success-screen" class="screen">
   <div class="success-icon">✓</div>
   <h2>המסמך נחתם!</h2>
   <p>המסמך החתום נשלח לכל הצדדים הרלוונטיים.</p>
   <button class="btn-download" onclick="downloadSigned()">↓ הורד עותק חתום</button>
-  <button class="btn-ghost2" onclick="backToDash()">← חזרה לרשימה</button>
+  <button class="btn-ghost2" onclick="backToDash()" style="margin-top:8px">← חזרה לרשימה</button>
 </div>
 
-<!-- ══ ERROR ══ -->
+<!-- ERROR -->
 <div id="error-screen" class="screen">
   <div style="font-size:52px">⚠</div>
   <h2>שגיאה</h2>
@@ -645,27 +243,24 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 </div>
 
 <script>
-/* ════════════════════════════════════════════
-   CONFIGURATION — עדכן לפני פריסה
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   CONFIGURATION
+══════════════════════════════════════════ */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIMVK7wYHNsAIvbncKoiImrwLhKEzwkXV7vhG3YNom-x4xYwzCwcXtIiNUfs8GgZYI/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: 'signer@gmail.com' },
   'admin':  { password: 'admin456', email: 'admin@gmail.com' }
 };
-
-// Make webhook — uncomment when ready
-// const MAKE_WEBHOOK = 'https://hook.eu1.make.com/YOUR_WEBHOOK';
-/* ════════════════════════════════════════════ */
+/* ══════════════════════════════════════════ */
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// ── State
+// State
 let currentUser     = null;
-let docBytes        = null;   // original file bytes
-let signedBytes     = null;   // signed PDF bytes
+let docBytes        = null;
+let signedBytes     = null;
 let currentToken    = null;
 let currentFileName = '';
 let currentFileType = '';
@@ -674,7 +269,6 @@ let hasSig          = false;
 let drawing         = false;
 let lx = 0, ly = 0;
 
-// ── Boot
 window.addEventListener('load', () => {
   urlToken = new URLSearchParams(location.search).get('token');
   show('login-screen');
@@ -683,29 +277,26 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && isActive('login-screen')) doLogin();
 });
 
-
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════════
    LOGIN
-════════════════════════════════════════════ */
+══════════════════════════════════════════ */
 function doLogin() {
   const u    = document.getElementById('username').value.trim();
   const p    = document.getElementById('password').value;
-  const err  = document.getElementById('login-err');
   const cred = CREDENTIALS[u];
   if (cred && cred.password === p) {
-    err.style.display = 'none';
+    document.getElementById('login-err').style.display = 'none';
     currentUser = { username: u, email: cred.email };
     if (urlToken) openByToken(urlToken);
     else loadDashboard();
   } else {
-    err.style.display = 'block';
+    document.getElementById('login-err').style.display = 'block';
   }
 }
 
-
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════════
    DASHBOARD
-════════════════════════════════════════════ */
+══════════════════════════════════════════ */
 async function loadDashboard() {
   setLoading('טוען מסמכים…');
   try {
@@ -715,7 +306,9 @@ async function loadDashboard() {
     document.getElementById('topbar-user').textContent = currentUser.email;
     buildDashboard(data.documents || []);
     show('dashboard-screen');
-  } catch (e) { showErr('לא ניתן לטעון את הרשימה: ' + e.message); }
+  } catch (e) {
+    showErr('לא ניתן לטעון את הרשימה: ' + e.message);
+  }
 }
 
 function buildDashboard(docs) {
@@ -730,20 +323,20 @@ function buildDashboard(docs) {
 }
 
 function makeCard(doc) {
-  const ext = (doc.fileName.split('.').pop() || '').toLowerCase();
+  const ext   = (doc.fileName.split('.').pop() || '').toLowerCase();
   const icons = { pdf:'📄', docx:'📝', doc:'📝', xlsx:'📊', xls:'📊' };
-  const cls   = ext === 'pdf' ? 'pdf' : (ext==='docx'||ext==='doc') ? 'docx' : (ext==='xlsx'||ext==='xls') ? 'xlsx' : 'other';
+  const cls   = ext==='pdf' ? 'pdf' : (ext==='docx'||ext==='doc') ? 'docx' : (ext==='xlsx'||ext==='xls') ? 'xlsx' : 'other';
   const card  = document.createElement('div');
-  card.className = `doc-card${doc.status==='pending' ? ' clickable' : ''}`;
+  card.className = `doc-card${doc.status === 'pending' ? ' clickable' : ''}`;
   card.innerHTML = `
     <div class="doc-left">
-      <div class="doc-icon ${cls}">${icons[ext]||'📎'}</div>
+      <div class="doc-icon ${cls}">${icons[ext] || '📎'}</div>
       <div>
         <div class="doc-name">${doc.fileName}</div>
         <div class="doc-date">${doc.createdAt ? fmtDate(doc.createdAt) : ''}</div>
       </div>
     </div>
-    <div class="badge ${doc.status}">${doc.status==='pending' ? 'ממתין' : 'חתום ✓'}</div>
+    <div class="badge ${doc.status}">${doc.status === 'pending' ? 'ממתין' : 'חתום ✓'}</div>
   `;
   if (doc.status === 'pending') card.onclick = () => openByToken(doc.token);
   return card;
@@ -752,25 +345,24 @@ function makeCard(doc) {
 function backToDash() {
   docBytes = null; signedBytes = null; currentToken = null;
   document.getElementById('viewer-body').innerHTML = '';
-  hasSig = false;
-  // Always reset submit button to clean state
+  hasSig = false; drawing = false;
   const btn = document.getElementById('submit-btn');
-  btn.textContent = 'שלח מסמך חתום';
-  btn.disabled    = true;
+  btn.textContent   = 'שלח מסמך חתום';
+  btn.disabled      = true;
   btn.style.display = '';
   loadDashboard();
 }
 
-
-/* ════════════════════════════════════════════
-   UPLOAD
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   UPLOAD — from index(2).html: no-cors + FileReader + retry
+══════════════════════════════════════════ */
 async function handleUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   setLoading('מעלה מסמך…');
+
   try {
-    const b64 = await toB64(file);
+    const b64  = await fileToB64(file);
     const body = JSON.stringify({
       action:      'store',
       pdf:         b64,
@@ -779,26 +371,25 @@ async function handleUpload(e) {
       senderEmail: currentUser.email
     });
 
-    // Retry up to 3 times — handles Apps Script cold starts
-    let lastErr = null;
+    // Retry up to 3× for Apps Script cold starts
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const res  = await fetch(APPS_SCRIPT_URL, {
+        // text/plain avoids CORS preflight; no-cors since we can't read redirect response
+        await fetch(APPS_SCRIPT_URL, {
           method:  'POST',
+          mode:    'no-cors',
           headers: { 'Content-Type': 'text/plain' },
           body
         });
-        const data = await res.json();
-        if (data.success) { lastErr = null; break; }
-        lastErr = new Error(data.error || 'Apps Script returned failure');
+        break; // if no throw, assume success
       } catch (err) {
-        lastErr = err;
-        if (attempt < 3) await sleep(2500);
+        if (attempt === 3) throw err;
+        await sleep(2500);
       }
     }
 
-    if (lastErr) throw lastErr;
-
+    // Wait for Apps Script to finish writing
+    await sleep(3000);
     e.target.value = '';
     await loadDashboard();
   } catch (err) {
@@ -807,10 +398,9 @@ async function handleUpload(e) {
   }
 }
 
-
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════════
    OPEN DOCUMENT
-════════════════════════════════════════════ */
+══════════════════════════════════════════ */
 async function openByToken(token) {
   setLoading('טוען מסמך…');
   currentToken = token;
@@ -818,8 +408,13 @@ async function openByToken(token) {
     const res  = await fetch(`${APPS_SCRIPT_URL}?action=fetch&token=${enc(token)}`);
     const data = await res.json();
 
-    if (data.error && data.error.includes('already')) {
-      buildViewer(null, data.fileName || '', true);
+    if (data.error && data.error.toLowerCase().includes('already')) {
+      document.getElementById('vtop-file').textContent = data.fileName || '';
+      document.getElementById('viewer-body').innerHTML =
+        `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#3a3a3a">
+           <div class="already-signed" style="max-width:340px">✓ מסמך זה כבר נחתם</div>
+         </div>`;
+      document.getElementById('submit-btn').style.display = 'none';
       show('viewer-screen');
       return;
     }
@@ -827,153 +422,118 @@ async function openByToken(token) {
 
     currentFileName = data.fileName || 'מסמך';
     currentFileType = currentFileName.split('.').pop().toLowerCase();
+    document.getElementById('vtop-file').textContent = currentFileName;
+    document.getElementById('submit-btn').style.display = '';
+    document.getElementById('submit-btn').disabled    = true;
+    document.getElementById('submit-btn').textContent = 'שלח מסמך חתום';
 
     const clean = data.pdf.replace(/\s/g, '');
     const chars = atob(clean);
     docBytes = new Uint8Array(chars.length);
     for (let i = 0; i < chars.length; i++) docBytes[i] = chars.charCodeAt(i);
 
-    await buildViewer(docBytes, currentFileName, false);
+    await buildViewer(docBytes, currentFileType);
     show('viewer-screen');
-  } catch (err) { showErr('לא ניתן לטעון את המסמך: ' + err.message); }
+  } catch (err) {
+    showErr('לא ניתן לטעון את המסמך: ' + err.message);
+  }
 }
 
-
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════════
    BUILD VIEWER
-════════════════════════════════════════════ */
-async function buildViewer(bytes, fileName, alreadySigned) {
+══════════════════════════════════════════ */
+async function buildViewer(bytes, type) {
   const body = document.getElementById('viewer-body');
   body.innerHTML = '';
-  document.getElementById('vtop-file').textContent = fileName;
+  hasSig = false;
 
-  if (alreadySigned) {
-    body.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#3a3a3a">
-      <div class="already-signed" style="max-width:340px">✓ מסמך זה כבר נחתם</div></div>`;
-    document.getElementById('submit-btn').style.display = 'none';
-    return;
-  }
-
-  document.getElementById('submit-btn').style.display = '';
-  document.getElementById('submit-btn').disabled = true;
-
-  const ext = (fileName.split('.').pop() || '').toLowerCase();
-
-  if (ext === 'pdf') {
+  if (type === 'pdf') {
     await buildPDFViewer(bytes, body);
-  } else if (ext === 'docx' || ext === 'doc') {
+  } else if (type === 'docx' || type === 'doc') {
     buildDocxViewer(bytes, body);
-  } else if (ext === 'xlsx' || ext === 'xls') {
+  } else if (type === 'xlsx' || type === 'xls') {
     buildXlsxViewer(bytes, body);
   } else {
-    body.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#3a3a3a;color:white;font-size:14px">תצוגה מקדימה אינה זמינה לסוג קובץ זה.</div>`;
+    body.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#3a3a3a;color:white;font-size:14px;padding:32px">תצוגה מקדימה אינה זמינה לסוג קובץ זה.</div>`;
     buildSidebar(body);
   }
 }
 
-/* ── PDF viewer with signature strip ── */
 async function buildPDFViewer(bytes, body) {
-  const docArea = document.createElement('div');
-  docArea.className = 'doc-area';
-  body.appendChild(docArea);
+  const area = document.createElement('div');
+  area.className = 'doc-area';
+  body.appendChild(area);
 
   const pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
-
   for (let p = 1; p <= pdf.numPages; p++) {
     const page     = await pdf.getPage(p);
     const viewport = page.getViewport({ scale: 1.5 });
     const wrap     = document.createElement('div');
     wrap.className = 'page-wrap';
-
-    const canvas = document.createElement('canvas');
+    const canvas   = document.createElement('canvas');
     canvas.className = 'pdf-page';
     canvas.width  = viewport.width;
     canvas.height = viewport.height;
     wrap.appendChild(canvas);
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-
-    // Signature strip on last page only
-    if (p === pdf.numPages) {
-      wrap.appendChild(buildSignatureStrip());
-    }
-
-    docArea.appendChild(wrap);
+    // Signature strip only on last page — from index.html.TXT
+    if (p === pdf.numPages) wrap.appendChild(buildSigStrip());
+    area.appendChild(wrap);
   }
 }
 
-function buildSignatureStrip() {
+function buildSigStrip() {
+  const today = new Date().toLocaleDateString('he-IL');
   const strip = document.createElement('div');
   strip.className = 'sig-strip';
-
-  // Right: Full name
-  const nameField = document.createElement('div');
-  nameField.className = 'strip-field';
-  nameField.innerHTML = `
-    <div class="strip-line">
-      <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
+  // Layout from index.html.TXT: name right, signature center, date left
+  strip.innerHTML = `
+    <div class="strip-field">
+      <div class="strip-line">
+        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
+      </div>
+      <div class="strip-label">שם מלא</div>
     </div>
-    <div class="strip-label">שם מלא</div>
-  `;
-
-  // Center: Signature
-  const sigField = document.createElement('div');
-  sigField.className = 'strip-field';
-  sigField.innerHTML = `
-    <div class="sig-canvas-wrap">
-      <canvas id="sig-canvas" width="180" height="60"></canvas>
-      <div class="sig-ghost" id="sig-ghost">חתום כאן</div>
+    <div class="strip-field">
+      <div class="sig-canvas-wrap">
+        <canvas id="sig-canvas" width="180" height="58"></canvas>
+        <div class="sig-ghost" id="sig-ghost-main">חתום כאן</div>
+      </div>
+      <div class="strip-label">חתימה</div>
+      <button class="clear-link" onclick="clearSig()">נקה</button>
     </div>
-    <div class="strip-label">חתימה</div>
-    <button class="clear-link" onclick="clearSig()">נקה</button>
-  `;
-
-  // Left: Date
-  const dateField = document.createElement('div');
-  dateField.className = 'strip-field';
-  const today = new Date().toLocaleDateString('he-IL');
-  dateField.innerHTML = `
-    <div class="strip-line">
-      <div class="strip-date-val">${today}</div>
+    <div class="strip-field">
+      <div class="strip-line">
+        <div class="strip-date-val">${today}</div>
+      </div>
+      <div class="strip-label">תאריך</div>
     </div>
-    <div class="strip-label">תאריך</div>
   `;
-
-  strip.appendChild(nameField);
-  strip.appendChild(sigField);
-  strip.appendChild(dateField);
-
-  // Init canvas after DOM insert (need requestAnimationFrame)
-  requestAnimationFrame(() => initSigCanvas('sig-canvas', 'sig-ghost'));
-
+  requestAnimationFrame(() => initSigCanvas('sig-canvas', 'sig-ghost-main'));
   return strip;
 }
 
-/* ── DOCX viewer with sidebar ── */
 function buildDocxViewer(bytes, body) {
   const area = document.createElement('div');
   area.className = 'docx-area';
   body.appendChild(area);
-  mammoth.convertToHtml({ arrayBuffer: bytes.buffer })
-    .then(r => { area.innerHTML = r.value; });
+  mammoth.convertToHtml({ arrayBuffer: bytes.buffer }).then(r => { area.innerHTML = r.value; });
   buildSidebar(body);
 }
 
-/* ── XLSX viewer with sidebar ── */
 function buildXlsxViewer(bytes, body) {
   const area = document.createElement('div');
   area.className = 'xlsx-area';
-  const wb  = XLSX.read(bytes, { type: 'array' });
-  const ws  = wb.Sheets[wb.SheetNames[0]];
-  area.innerHTML = XLSX.utils.sheet_to_html(ws);
+  const wb = XLSX.read(bytes, { type: 'array' });
+  area.innerHTML = XLSX.utils.sheet_to_html(wb.Sheets[wb.SheetNames[0]]);
   body.appendChild(area);
   buildSidebar(body);
 }
 
-/* ── Non-PDF sidebar ── */
 function buildSidebar(body) {
+  const today = new Date().toLocaleDateString('he-IL');
   const sb = document.createElement('div');
   sb.className = 'sign-sidebar';
-  const today = new Date().toLocaleDateString('he-IL');
   sb.innerHTML = `
     <div class="sidebar-title">חתימה על המסמך</div>
     <div class="sidebar-hr"></div>
@@ -989,22 +549,21 @@ function buildSidebar(body) {
       <div class="sf-label">חתימה *</div>
       <div class="sf-canvas-wrap">
         <canvas id="sig-canvas-side" width="240" height="100"></canvas>
-        <div class="sf-ghost" id="sig-ghost">חתום כאן</div>
+        <div class="sf-ghost" id="sig-ghost-side">חתום כאן</div>
       </div>
       <button class="clear-link" style="margin-top:6px" onclick="clearSig()">נקה חתימה</button>
     </div>
     <div class="legal">בשליחת מסמך זה אתה מאשר שקראת, הבנת וחתמת עליו אלקטרונית. חתימה זו מחייבת משפטית.</div>
   `;
   body.appendChild(sb);
-  requestAnimationFrame(() => initSigCanvas('sig-canvas-side', 'sig-ghost'));
+  requestAnimationFrame(() => initSigCanvas('sig-canvas-side', 'sig-ghost-side'));
 }
 
-
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════════
    SIGNATURE CANVAS
-════════════════════════════════════════════ */
-function initSigCanvas(canvasId, ghostId) {
-  const canvas = document.getElementById(canvasId);
+══════════════════════════════════════════ */
+function initSigCanvas(id, ghostId) {
+  const canvas = document.getElementById(id);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -1041,13 +600,12 @@ function initSigCanvas(canvasId, ghostId) {
 }
 
 function clearSig() {
-  const ids = ['sig-canvas', 'sig-canvas-side'];
-  ids.forEach(id => {
+  ['sig-canvas', 'sig-canvas-side'].forEach(id => {
     const c = document.getElementById(id);
     if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
   });
   hasSig = false;
-  ['sig-ghost'].forEach(id => {
+  ['sig-ghost-main', 'sig-ghost-side'].forEach(id => {
     const g = document.getElementById(id);
     if (g) g.style.display = 'flex';
   });
@@ -1056,87 +614,78 @@ function clearSig() {
 
 function checkReady() {
   const nameEl = document.getElementById('signer-name');
-  const name   = nameEl ? nameEl.value.trim() : '';
-  document.getElementById('submit-btn').disabled = !(name && hasSig);
+  document.getElementById('submit-btn').disabled = !(nameEl && nameEl.value.trim() && hasSig);
 }
 
-
-/* ════════════════════════════════════════════
-   SUBMIT SIGNED
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   SUBMIT — from index.html.TXT: no-cors, signs last page only
+   Large file b64 from index(2).html: FileReader blobToB64
+══════════════════════════════════════════ */
 async function submitSigned() {
   const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.textContent = 'מעבד…';
+  btn.disabled = true; btn.textContent = 'מעבד...';
 
   try {
-    const nameEl = document.getElementById('signer-name');
+    // PDFLib destructured here — guaranteed loaded, no ReferenceError
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+
+    const nameEl     = document.getElementById('signer-name');
     const signerName = nameEl ? nameEl.value.trim() : '';
     const signerDate = new Date().toLocaleDateString('he-IL');
 
-    // Get signature canvas
-    const sigCanvas = document.getElementById('sig-canvas') || document.getElementById('sig-canvas-side');
+    const sigCanvas  = document.getElementById('sig-canvas') || document.getElementById('sig-canvas-side');
     const sigDataURL = sigCanvas.toDataURL('image/png');
     const sigB64     = sigDataURL.split(',')[1];
     const sigBytes   = Uint8Array.from(atob(sigB64), c => c.charCodeAt(0));
 
-    let signedB64;
-    const ext = currentFileType;
-    const { PDFDocument, rgb, StandardFonts } = PDFLib;
-    if (ext === 'pdf') {
-      // Embed signature on EVERY page
-      const pdfDoc = await PDFDocument.load(docBytes);
-      const pages  = pdfDoc.getPages();
-      const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const sigImg = await pdfDoc.embedPng(sigBytes);
+    let finalBytes;
 
-      for (const page of pages) {
-        const { width } = page.getSize();
-        const sigW = 120, sigH = 40;
-        const centerX = width / 2 - sigW / 2;
-        const rightX  = width - 160;
+    if (currentFileType === 'pdf') {
+      const pdfDoc   = await PDFDocument.load(docBytes);
+      const pages    = pdfDoc.getPages();
+      const lastPage = pages[pages.length - 1];
+      const font     = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const sigImg   = await pdfDoc.embedPng(sigBytes);
+      const { width } = lastPage.getSize();
 
-        // Background strip
-        page.drawRectangle({
-          x: 20, y: 10,
-          width: width - 40, height: 72,
-          color: rgb(0.97, 0.97, 0.97),
-          borderColor: rgb(0.85, 0.85, 0.85),
-          borderWidth: 0.5
-        });
+      // Placement from index.html.TXT: name right, sig center, date left
+      lastPage.drawImage(sigImg, {
+        x: width / 2 - 60,
+        y: 100,
+        width: 120,
+        height: 40
+      });
+      lastPage.drawText(`נחתם על ידי: ${signerName}`, {
+        x: width - 280,
+        y: 75,
+        size: 11,
+        font,
+        color: rgb(0.1, 0.1, 0.1)
+      });
+      lastPage.drawText(`תאריך: ${signerDate}`, {
+        x: 30,
+        y: 75,
+        size: 10,
+        font,
+        color: rgb(0.3, 0.3, 0.3)
+      });
+      lastPage.drawLine({ start: { x: 30, y: 70 }, end: { x: width - 30, y: 70 }, thickness: 0.75, color: rgb(0.7, 0.7, 0.7) });
+      lastPage.drawText(`ID: ${currentToken}`, { x: 30, y: 55, size: 6, font, color: rgb(0.7, 0.7, 0.7) });
 
-        // Date (left side in RTL doc = right X position)
-        page.drawText(signerDate, { x: 30, y: 52, size: 11, font, color: rgb(0.2, 0.2, 0.2) });
-        page.drawLine({ start: { x: 30, y: 47 }, end: { x: 160, y: 47 }, thickness: 0.75, color: rgb(0.4,0.4,0.4) });
-        page.drawText('Date', { x: 80, y: 34, size: 8, font, color: rgb(0.5,0.5,0.5) });
-
-        // Signature (center)
-        page.drawImage(sigImg, { x: centerX, y: 42, width: sigW, height: sigH });
-        page.drawLine({ start: { x: centerX, y: 38 }, end: { x: centerX + sigW, y: 38 }, thickness: 0.75, color: rgb(0.4,0.4,0.4) });
-        page.drawText('Signature', { x: centerX + 30, y: 26, size: 8, font, color: rgb(0.5,0.5,0.5) });
-
-        // Name (right)
-        page.drawText(signerName.substring(0, 22), { x: rightX, y: 52, size: 11, font, color: rgb(0.2,0.2,0.2) });
-        page.drawLine({ start: { x: rightX, y: 47 }, end: { x: width - 25, y: 47 }, thickness: 0.75, color: rgb(0.4,0.4,0.4) });
-        page.drawText('Full Name', { x: rightX + 10, y: 34, size: 8, font, color: rgb(0.5,0.5,0.5) });
-
-        // Document ID tiny
-        page.drawText(`ID: ${currentToken}`, { x: 30, y: 16, size: 6, font, color: rgb(0.7,0.7,0.7) });
-      }
-
-      signedBytes = await pdfDoc.save();
-      let bin = ''; signedBytes.forEach(b => bin += String.fromCharCode(b));
-      signedB64 = btoa(bin);
-
+      finalBytes = await pdfDoc.save();
     } else {
-      // DOCX/XLSX: return original file; signature image attached separately by Apps Script
-      let bin = ''; docBytes.forEach(b => bin += String.fromCharCode(b));
-      signedB64 = btoa(bin);
-      signedBytes = docBytes;
+      finalBytes = docBytes;
     }
 
-    // POST with text/plain — no CORS preflight
+    signedBytes = finalBytes;
+
+    // Safe base64 for large files — FileReader from index(2).html
+    const signedB64 = await blobToB64(new Blob([finalBytes]));
+
+    // no-cors POST — from index.html.TXT and index(2).html
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
+      method:  'POST',
+      mode:    'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         action:     'complete',
@@ -1149,27 +698,20 @@ async function submitSigned() {
       })
     });
 
-    // Notify Make webhook if configured
-    // if (typeof MAKE_WEBHOOK !== 'undefined') {
-    //   fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'text/plain' },
-    //     body: JSON.stringify({ token: currentToken, fileName: currentFileName, signerName }) });
-    // }
-
-    await sleep(2000); // let Apps Script finish
+    await sleep(3000); // let Apps Script finish
     show('success-screen');
 
   } catch (err) {
-    alert('שגיאה: ' + err.message);
+    alert('שגיאה בשליחה: ' + err.message);
     btn.disabled = false; btn.textContent = 'שלח מסמך חתום';
   }
 }
 
-
-/* ════════════════════════════════════════════
-   DOWNLOAD
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   DOWNLOAD — from index(2).html: DOM-appended anchor
+══════════════════════════════════════════ */
 function downloadSigned() {
-  if (!signedBytes) return;
+  if (!signedBytes || signedBytes.length === 0) { alert('אין קובץ להורדה'); return; }
   const mimes = {
     pdf:  'application/pdf',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -1178,22 +720,21 @@ function downloadSigned() {
     xls:  'application/vnd.ms-excel'
   };
   const mime = mimes[currentFileType] || 'application/octet-stream';
-  const name = currentFileName.replace(/\.[^.]+$/, '_חתום.' + currentFileType);
+  const name = 'חתום_' + currentFileName;
   const blob = new Blob([signedBytes], { type: mime });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
+  a.style.display = 'none';
   a.href     = url;
   a.download = name;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
-
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════════
    UTILS
-════════════════════════════════════════════ */
+══════════════════════════════════════════ */
 const SCREENS = ['loading-screen','login-screen','dashboard-screen','viewer-screen','success-screen','error-screen'];
 function show(id)     { SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s === id)); }
 function isActive(id) { return document.getElementById(id).classList.contains('active'); }
@@ -1201,7 +742,10 @@ function setLoading(msg) { document.getElementById('loading-text').textContent =
 function showErr(msg)    { document.getElementById('err-msg').textContent = msg; show('error-screen'); }
 function enc(s)          { return encodeURIComponent(s); }
 function sleep(ms)       { return new Promise(r => setTimeout(r, ms)); }
-function toB64(file)     {
+function fmtDate(str)    { try { return new Date(str).toLocaleDateString('he-IL'); } catch { return str; } }
+
+// Read File as base64 — FileReader, handles any size
+function fileToB64(file) {
   return new Promise((res, rej) => {
     const r = new FileReader();
     r.onload  = () => res(r.result.split(',')[1]);
@@ -1209,8 +753,15 @@ function toB64(file)     {
     r.readAsDataURL(file);
   });
 }
-function fmtDate(str) {
-  try { return new Date(str).toLocaleDateString('he-IL'); } catch { return str; }
+
+// Read Blob as base64 — safe for large signed PDFs, from index(2).html
+function blobToB64(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Blob read failed'));
+    r.readAsDataURL(blob);
+  });
 }
 </script>
 </body>
