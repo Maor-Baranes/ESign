@@ -659,7 +659,6 @@ const CREDENTIALS = {
 // const MAKE_WEBHOOK = 'https://hook.eu1.make.com/YOUR_WEBHOOK';
 /* ════════════════════════════════════════════ */
 
-const { PDFDocument, rgb, StandardFonts } = PDFLib;
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -1082,7 +1081,7 @@ async function submitSigned() {
 
     let signedB64;
     const ext = currentFileType;
-
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
     if (ext === 'pdf') {
       // Embed signature on EVERY page
       const pdfDoc = await PDFDocument.load(docBytes);
