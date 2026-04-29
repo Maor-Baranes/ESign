@@ -952,83 +952,87 @@ async function submitSigned() {
    because the browser canvas handles all scripts natively.
 ══════════════════════════════════════════ */
 async function renderSigStripToImage(signerName, sigCanvas, signerDate) {
-  const sigDataUrl = sigCanvas.toDataURL('image/png');
+  // Draw the sig strip entirely with Canvas 2D — no DOM snapshot, no network requests.
+  // Scale 2× for sharpness when embedded in PDF.
+  const S    = 2;           // pixel scale
+  const W    = 700 * S;     // strip width
+  const PAD  = 28 * S;
+  const FIELD_W = Math.floor((W - PAD * 2 - 32 * S) / 3);  // three equal columns
+  const SIG_W   = 200 * S;
+  const ROW_H   = 52 * S;   // height of the value row
+  const LABEL_H = 22 * S;
+  const TOP_PAD = 18 * S;
+  const BOT_PAD = 16 * S;
+  const H = TOP_PAD + ROW_H + 6 * S + LABEL_H + BOT_PAD + 4 * S; // total height
 
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;background:#fff;z-index:-1;';
+  const c   = document.createElement('canvas');
+  c.width   = W;
+  c.height  = H;
+  const ctx = c.getContext('2d');
 
-  wrap.innerHTML = `
-    <div style="
-      background:#fff;
-      border-top:2.5px solid #1d4ed8;
-      width:100%;
-      padding:18px 28px 16px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:16px;
-      direction:rtl;
-      font-family:DM Sans,Arial,sans-serif;
-      box-sizing:border-box;
-    ">
-      <!-- Name field -->
-      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
-        <div style="
-          width:100%;
-          border-bottom:1.5px solid #333;
-          min-height:48px;
-          display:flex;
-          align-items:flex-end;
-          justify-content:center;
-          padding-bottom:5px;
-          font-size:14px;
-          color:#111;
-          direction:rtl;
-          word-break:break-word;
-          text-align:center;
-        ">${signerName}</div>
-        <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.05em;margin-top:5px;">שם מלא</div>
-      </div>
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
 
-      <!-- Signature field -->
-      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
-        <div style="width:180px;border-bottom:1.5px solid #333;margin-bottom:5px;">
-          <img src="${sigDataUrl}" width="180" height="58" style="display:block;width:180px;height:58px;">
-        </div>
-        <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.05em;">חתימה</div>
-      </div>
+  // Blue top border
+  ctx.fillStyle = '#1d4ed8';
+  ctx.fillRect(0, 0, W, 3 * S);
 
-      <!-- Date field -->
-      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
-        <div style="
-          width:100%;
-          border-bottom:1.5px solid #333;
-          min-height:48px;
-          display:flex;
-          align-items:flex-end;
-          justify-content:center;
-          padding-bottom:5px;
-          font-size:13px;
-          color:#444;
-          text-align:center;
-        ">${signerDate}</div>
-        <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.05em;margin-top:5px;">תאריך</div>
-      </div>
-    </div>
-  `;
+  const font = `Arial, sans-serif`;
 
-  document.body.appendChild(wrap);
-  await sleep(120); // let browser finish layout + image decode
+  // Helper: draw one field (value text or image, underline, label)
+  function drawField(x, w, valueText, label, imgEl) {
+    const valueY  = TOP_PAD;
+    const lineY   = valueY + ROW_H;
+    const labelY  = lineY + 8 * S;
 
-  const c = await html2canvas(wrap.firstElementChild, {
-    scale:           2,
-    backgroundColor: '#ffffff',
-    useCORS:         true,
-    allowTaint:      true,
-    logging:         false
+    // Underline
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth   = 1.5 * S;
+    ctx.beginPath();
+    ctx.moveTo(x, lineY);
+    ctx.lineTo(x + w, lineY);
+    ctx.stroke();
+
+    if (imgEl) {
+      // Signature image — center it vertically in the row
+      const ih = Math.min(ROW_H - 4 * S, imgEl.height * (w / imgEl.width));
+      const iw = imgEl.width  * (ih / imgEl.height);
+      ctx.drawImage(imgEl, x + (w - iw) / 2, valueY + (ROW_H - ih) / 2, iw, ih);
+    } else {
+      // Text value — centred, RTL-aware via measureText
+      ctx.font         = `${14 * S}px ${font}`;
+      ctx.fillStyle    = '#111111';
+      ctx.textBaseline = 'bottom';
+      ctx.textAlign    = 'center';
+      ctx.direction    = 'rtl';
+      ctx.fillText(valueText, x + w / 2, lineY - 5 * S, w - 8 * S);
+    }
+
+    // Label below the line
+    ctx.font         = `600 ${9 * S}px ${font}`;
+    ctx.fillStyle    = '#666666';
+    ctx.textBaseline = 'top';
+    ctx.textAlign    = 'center';
+    ctx.direction    = 'ltr';
+    ctx.fillText(label, x + w / 2, labelY);
+  }
+
+  // Column x positions (RTL order: name | sig | date)
+  const col1x = PAD;
+  const col2x = PAD + FIELD_W + 16 * S;
+  const col3x = PAD + FIELD_W + 16 * S + SIG_W + 16 * S;
+
+  // Load sig canvas image so we can drawImage it
+  const sigImg = new Image();
+  await new Promise(res => {
+    sigImg.onload = res;
+    sigImg.src    = sigCanvas.toDataURL('image/png');
   });
 
-  document.body.removeChild(wrap);
+  drawField(col1x, FIELD_W, signerName, 'שם מלא', null);
+  drawField(col2x, SIG_W,   '',         'חתימה',   sigImg);
+  drawField(col3x, FIELD_W, signerDate, 'תאריך',   null);
 
   const dataUrl = c.toDataURL('image/png');
   return Uint8Array.from(atob(dataUrl.split(',')[1]), ch => ch.charCodeAt(0));
@@ -1057,10 +1061,20 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
 
   const fullCanvas = await html2canvas(contentEl, {
     scale:           1.5,
-    useCORS:         true,
+    useCORS:         false,
     allowTaint:      true,
     backgroundColor: '#ffffff',
-    logging:         false
+    logging:         false,
+    onclone: (clonedDoc) => {
+      // Strip any external stylesheet/font links so html2canvas makes no network requests
+      clonedDoc.querySelectorAll('link[rel="stylesheet"], link[rel="preload"]').forEach(el => el.remove());
+      clonedDoc.querySelectorAll('style').forEach(el => {
+        // Remove @import and url() font references
+        el.textContent = el.textContent
+          .replace(/@import[^;]+;/g, '')
+          .replace(/url\(['"]?https?:\/\/[^'"')]+['"]?\)/g, 'none');
+      });
+    }
   });
 
   contentEl.style.height    = saved.height;
