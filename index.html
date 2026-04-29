@@ -274,7 +274,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 /* ══════════════════════════════════════════
    CONFIGURATION  — replace YOUR_DEPLOYMENT_ID
 ══════════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIMVK7wYHNsAIvbncKoiImrwLhKEzwkXV7vhG3YNom-x4xYwzCwcXtIiNUfs8GgZYI/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: 'signer@gmail.com' },
@@ -842,7 +842,7 @@ async function submitSigned() {
 
     // ── PDF: embed signature directly ─────────────────────────
     if (currentFileType === 'pdf') {
-      const pdfDoc   = await PDFDocument.load(docBytes);
+      const pdfDoc   = await PDFDocument.load(docBytes, { ignoreEncryption: true });
       const pages    = pdfDoc.getPages();
       const lastPage = pages[pages.length - 1];
       const font     = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -864,8 +864,9 @@ async function submitSigned() {
       });
       // Signature image (centred)
       lastPage.drawImage(sigImg, { x: width / 2 - 70, y: 42, width: 140, height: 46 });
-      // Signer name (right side)
-      lastPage.drawText(`Signed by: ${signerName}`, {
+      // Signer name (right side) — strip non-Latin chars; WinAnsi can't encode Hebrew
+      const safeSignerNamePdf = signerName.split('').filter(c => c.charCodeAt(0) < 256).join('') || signerName;
+      lastPage.drawText(`Signed by: ${safeSignerNamePdf}`, {
         x: width - 30, y: 72, size: 10, font, color: rgb(0.1, 0.1, 0.1)
       });
       // Date (left side)
@@ -1019,10 +1020,19 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
 
   // Blue header bar
   sp.drawRectangle({ x: 0, y: A4_H - 90, width: A4_W, height: 90, color: rgb(0.11, 0.31, 0.85) });
+  // NOTE: PDFLib standard fonts (Helvetica etc.) use WinAnsi encoding and
+  // cannot render Hebrew or other non-Latin characters. All text on the
+  // certificate page is therefore kept in Latin/English only.
+  // The signer name field is also sanitised below for the same reason.
+  const safeSignerName = (signerName || '')
+    .split('').filter(c => c.charCodeAt(0) < 256).join('') || 'Signer';
+  const safeFileName = (fileName || 'document')
+    .split('').filter(c => c.charCodeAt(0) < 256).join('') || 'document';
+
   sp.drawText('Electronic Signature Certificate', {
     x: M, y: A4_H - 48, size: 20, font: fontBold, color: rgb(1, 1, 1)
   });
-  sp.drawText('אישור חתימה אלקטרונית', {
+  sp.drawText('Legally binding electronic signature record', {
     x: M, y: A4_H - 72, size: 12, font, color: rgb(0.80, 0.88, 1.0)
   });
 
@@ -1034,13 +1044,13 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
     borderColor: rgb(0.72, 0.79, 0.95), borderWidth: 1
   });
   sp.drawText('Document Information', { x: M + 14, y: boxTop - 22, size: 10, font: fontBold, color: rgb(0.15, 0.25, 0.55) });
-  sp.drawText(`File: ${fileName}`,     { x: M + 14, y: boxTop - 40, size: 10, font, color: rgb(0.2, 0.2, 0.2) });
+  sp.drawText(`File: ${safeFileName}`,    { x: M + 14, y: boxTop - 40, size: 10, font, color: rgb(0.2, 0.2, 0.2) });
   sp.drawText(`Signed on: ${signerDate}`, { x: M + 14, y: boxTop - 58, size: 10, font, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawText(`Document ID: ${token}`, { x: M + 14, y: boxTop - 76, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+  sp.drawText(`Document ID: ${token}`,    { x: M + 14, y: boxTop - 76, size: 9,  font, color: rgb(0.4, 0.4, 0.4) });
 
   // Signer name
   sp.drawText('Signer', { x: M, y: A4_H - 250, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawText(signerName || '—', { x: M, y: A4_H - 270, size: 15, font: fontBold, color: rgb(0.05, 0.05, 0.05) });
+  sp.drawText(safeSignerName, { x: M, y: A4_H - 270, size: 15, font: fontBold, color: rgb(0.05, 0.05, 0.05) });
 
   // Signature image box
   const sigBoxY = A4_H - 400;
@@ -1061,7 +1071,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
     start: { x: M, y: sigBoxY - 8 }, end: { x: M + 230, y: sigBoxY - 8 },
     thickness: 1, color: rgb(0.35, 0.35, 0.35)
   });
-  sp.drawText(signerName || '', {
+  sp.drawText(safeSignerName, {
     x: M + 65, y: sigBoxY - 22, size: 9,
     font, color: rgb(0.45, 0.45, 0.45)
   });
