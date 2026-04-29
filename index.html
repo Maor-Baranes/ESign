@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>×¤×•×¨×˜×œ ×—×ª×™×ž×” ×¢×œ ×ž×¡×ž×›×™×</title>
+<title>פורטל חתימה על מסמכים</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -30,13 +30,13 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--i
 .screen { display: none; }
 .screen.active { display: flex; }
 
-/* â”€â”€ LOADING â”€â”€ */
+/* ── LOADING ── */
 #loading-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
 .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .75s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 14px; color: var(--ink-light); }
 
-/* â”€â”€ LOGIN â”€â”€ */
+/* ── LOGIN ── */
 #login-screen { align-items: center; justify-content: center; min-height: 100vh; }
 .login-wrap { width: 100%; max-width: 400px; padding: 24px; }
 .login-logo { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 6px; }
@@ -51,7 +51,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--i
 .btn-primary { width: 100%; padding: 13px; border: none; border-radius: var(--r); background: var(--ink); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
 .btn-primary:hover { opacity: .9; }
 
-/* â”€â”€ DASHBOARD â”€â”€ */
+/* ── DASHBOARD ── */
 #dashboard-screen { flex-direction: column; min-height: 100vh; }
 .topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
 .topbar-brand { font-family: 'DM Serif Display', serif; font-size: 22px; }
@@ -81,7 +81,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--i
 .badge.completed { background: #dcfce7; color: #166534; }
 .empty { background: var(--white); border: 1.5px dashed var(--border); border-radius: 12px; padding: 28px; text-align: center; color: var(--ink-light); font-size: 14px; }
 
-/* â”€â”€ VIEWER â”€â”€ */
+/* ── VIEWER ── */
 #viewer-screen { flex-direction: column; min-height: 100vh; }
 .viewer-topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
 .vtop-left { display: flex; flex-direction: column; gap: 2px; }
@@ -100,7 +100,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--i
 .page-wrap { position: relative; margin-bottom: 20px; box-shadow: 0 6px 32px rgba(0,0,0,.4); }
 canvas.pdf-page { display: block; max-width: 100%; background: white; }
 
-/* Signature strip â€” appended to last PDF page */
+/* Signature strip — appended to last PDF page */
 .sig-strip {
   background: #fff;
   border-top: 2.5px solid #1d4ed8;
@@ -164,7 +164,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 .legal { font-size: 11px; color: #aaa; line-height: 1.6; border-top: 1px solid var(--border); padding-top: 14px; }
 .already-signed { background: #dcfce7; color: #166534; border-radius: var(--r); padding: 14px; font-size: 13px; font-weight: 600; text-align: center; }
 
-/* â”€â”€ SUCCESS â”€â”€ */
+/* ── SUCCESS ── */
 #success-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 14px; }
 .success-icon { width: 76px; height: 76px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; }
 #success-screen h2 { font-family: 'DM Serif Display', serif; font-size: 30px; }
@@ -173,7 +173,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 .btn-download:hover { opacity: .88; }
 .btn-ghost2 { padding: 10px 22px; background: none; border: 1.5px solid var(--border); border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; color: var(--ink); }
 
-/* â”€â”€ ERROR â”€â”€ */
+/* ── ERROR ── */
 #error-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 12px; }
 #error-screen h2 { font-family: 'DM Serif Display', serif; font-size: 26px; }
 #error-screen p  { font-size: 14px; color: var(--ink-light); max-width: 380px; line-height: 1.6; }
@@ -192,25 +192,25 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <!-- LOADING -->
 <div id="loading-screen" class="screen">
   <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">×˜×•×¢×Ÿâ€¦</div>
+  <div class="loading-text" id="loading-text">טוען…</div>
 </div>
 
 <!-- LOGIN -->
 <div id="login-screen" class="screen">
   <div class="login-wrap">
-    <div class="login-logo">×—×ª×™×ž×”<span>.</span></div>
-    <div class="login-sub">×ž×¢×¨×›×ª ×—×ª×™×ž×” ××œ×§×˜×¨×•× ×™×ª ×ž××•×‘×˜×—×ª</div>
+    <div class="login-logo">חתימה<span>.</span></div>
+    <div class="login-sub">מערכת חתימה אלקטרונית מאובטחת</div>
     <div class="card">
       <div class="field">
-        <label>×©× ×ž×©×ª×ž×©</label>
-        <input type="text" id="username" placeholder="×”×–×Ÿ ×©× ×ž×©×ª×ž×©" autocomplete="off">
+        <label>שם משתמש</label>
+        <input type="text" id="username" placeholder="הזן שם משתמש" autocomplete="off">
       </div>
       <div class="field">
-        <label>×¡×™×¡×ž×”</label>
-        <input type="password" id="password" placeholder="×”×–×Ÿ ×¡×™×¡×ž×”">
+        <label>סיסמה</label>
+        <input type="password" id="password" placeholder="הזן סיסמה">
       </div>
-      <div class="err" id="login-err">×©× ×ž×©×ª×ž×© ××• ×¡×™×¡×ž×” ×©×’×•×™×™×</div>
-      <button class="btn-primary" onclick="doLogin()">×›× ×™×¡×” â†</button>
+      <div class="err" id="login-err">שם משתמש או סיסמה שגויים</div>
+      <button class="btn-primary" onclick="doLogin()">כניסה ←</button>
     </div>
   </div>
 </div>
@@ -218,18 +218,18 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <!-- DASHBOARD -->
 <div id="dashboard-screen" class="screen">
   <div class="topbar">
-    <div class="topbar-brand">×—×ª×™×ž×”<span>.</span></div>
+    <div class="topbar-brand">חתימה<span>.</span></div>
     <div class="topbar-user" id="topbar-user"></div>
   </div>
   <div class="dash-body">
     <div class="dash-header">
-      <div class="dash-title">×”×ž×¡×ž×›×™× ×©×œ×™</div>
-      <button class="upload-btn" onclick="document.getElementById('file-input').click()">ï¼‹ ×”×¢×œ×” ×ž×¡×ž×š</button>
+      <div class="dash-title">המסמכים שלי</div>
+      <button class="upload-btn" onclick="document.getElementById('file-input').click()">＋ העלה מסמך</button>
       <input type="file" id="file-input" accept=".pdf,.docx,.doc,.xlsx,.xls" onchange="handleUpload(event)">
     </div>
-    <div class="section-label">×ž×ž×ª×™× ×™× ×œ×—×ª×™×ž×”</div>
+    <div class="section-label">ממתינים לחתימה</div>
     <div class="doc-list" id="pending-list"></div>
-    <div class="section-label">×—×ª×•×ž×™×</div>
+    <div class="section-label">חתומים</div>
     <div class="doc-list" id="completed-list"></div>
   </div>
 </div>
@@ -238,54 +238,54 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <div id="viewer-screen" class="screen">
   <div class="viewer-topbar">
     <div class="vtop-left">
-      <div class="vtop-brand">×—×ª×™×ž×”.</div>
-      <div class="vtop-file" id="vtop-file">×˜×•×¢×Ÿâ€¦</div>
+      <div class="vtop-brand">חתימה.</div>
+      <div class="vtop-file" id="vtop-file">טוען…</div>
     </div>
     <div class="vtop-right">
-      <button class="btn-back" onclick="backToDash()">â† ×—×–×¨×”</button>
-      <button class="btn-submit" id="submit-btn" onclick="submitSigned()" disabled>×©×œ×— ×ž×¡×ž×š ×—×ª×•×</button>
+      <button class="btn-back" onclick="backToDash()">← חזרה</button>
+      <button class="btn-submit" id="submit-btn" onclick="submitSigned()" disabled>שלח מסמך חתום</button>
     </div>
   </div>
   <div class="viewer-body" id="viewer-body"></div>
-  <!-- floating hint for PDF â€” scrolls to sig strip -->
+  <!-- floating hint for PDF — scrolls to sig strip -->
   <div class="sig-strip-hint" id="sig-strip-hint" onclick="scrollToSigStrip()">
-    âœï¸ ×’×œ×•×œ ×œ×—×ª×™×ž×”
+    ✍️ גלול לחתימה
   </div>
 </div>
 
 <!-- SUCCESS -->
 <div id="success-screen" class="screen">
-  <div class="success-icon">âœ“</div>
-  <h2>×”×ž×¡×ž×š × ×—×ª×!</h2>
-  <p id="success-msg">×”×ž×¡×ž×š ×”×—×ª×•× × ×©×œ×— ×œ×›×œ ×”×¦×“×“×™× ×”×¨×œ×•×•× ×˜×™×™×.</p>
-  <button class="btn-download" onclick="downloadSigned()">â†“ ×”×•×¨×“ ×¢×•×ª×§ ×—×ª×•×</button>
-  <button class="btn-ghost2" onclick="backToDash()" style="margin-top:8px">â† ×—×–×¨×” ×œ×¨×©×™×ž×”</button>
+  <div class="success-icon">✓</div>
+  <h2>המסמך נחתם!</h2>
+  <p id="success-msg">המסמך החתום נשלח לכל הצדדים הרלוונטיים.</p>
+  <button class="btn-download" onclick="downloadSigned()">↓ הורד עותק חתום</button>
+  <button class="btn-ghost2" onclick="backToDash()" style="margin-top:8px">← חזרה לרשימה</button>
 </div>
 
 <!-- ERROR -->
 <div id="error-screen" class="screen">
-  <div style="font-size:52px">âš </div>
-  <h2>×©×’×™××”</h2>
-  <p id="err-msg">××™×¨×¢×” ×©×’×™××” ×‘×œ×ª×™ ×¦×¤×•×™×”.</p>
-  <button class="btn-ghost2" onclick="backToDash()" style="margin-top:8px">â† ×—×–×¨×” ×œ×¨×©×™×ž×”</button>
+  <div style="font-size:52px">⚠</div>
+  <h2>שגיאה</h2>
+  <p id="err-msg">אירעה שגיאה בלתי צפויה.</p>
+  <button class="btn-ghost2" onclick="backToDash()" style="margin-top:8px">← חזרה לרשימה</button>
 </div>
 
 <script>
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   CONFIGURATION  â€” replace YOUR_DEPLOYMENT_ID
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+/* ══════════════════════════════════════════
+   CONFIGURATION  — replace YOUR_DEPLOYMENT_ID
+══════════════════════════════════════════ */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIMVK7wYHNsAIvbncKoiImrwLhKEzwkXV7vhG3YNom-x4xYwzCwcXtIiNUfs8GgZYI/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: 'signer@gmail.com' },
   'admin':  { password: 'admin456', email: 'admin@gmail.com' }
 };
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════════ */
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── State ──────────────────────────────────
 let currentUser     = null;
 let docBytes        = null;   // original file bytes (Uint8Array)
 let signedBytes     = null;   // signed file bytes  (Uint8Array / ArrayBuffer)
@@ -306,9 +306,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && isActive('login-screen')) doLogin();
 });
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    UTILS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 const SCREENS = ['loading-screen','login-screen','dashboard-screen','viewer-screen','success-screen','error-screen'];
 function show(id)     {
   SCREENS.forEach(s => document.getElementById(s).classList.toggle('active', s === id));
@@ -319,7 +319,7 @@ function show(id)     {
   }
 }
 function isActive(id) { return document.getElementById(id).classList.contains('active'); }
-function setLoading(msg) { document.getElementById('loading-text').textContent = msg || '×˜×•×¢×Ÿâ€¦'; show('loading-screen'); }
+function setLoading(msg) { document.getElementById('loading-text').textContent = msg || 'טוען…'; show('loading-screen'); }
 function showErr(msg)    { document.getElementById('err-msg').textContent = msg; show('error-screen'); }
 function enc(s)          { return encodeURIComponent(s); }
 function sleep(ms)       { return new Promise(r => setTimeout(r, ms)); }
@@ -346,7 +346,7 @@ function fileToB64(file) {
   });
 }
 
-/** Read a Blob as base64 â€” safe for large signed PDFs. */
+/** Read a Blob as base64 — safe for large signed PDFs. */
 function blobToB64(blob) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -356,9 +356,9 @@ function blobToB64(blob) {
   });
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    LOGIN
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 function doLogin() {
   const u    = document.getElementById('username').value.trim();
   const p    = document.getElementById('password').value;
@@ -373,11 +373,11 @@ function doLogin() {
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    DASHBOARD
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function loadDashboard() {
-  setLoading('×˜×•×¢×Ÿ ×ž×¡×ž×›×™×â€¦');
+  setLoading('טוען מסמכים…');
   try {
     const res  = await fetchWithTimeout(
       `${APPS_SCRIPT_URL}?action=list&email=${enc(currentUser.email)}`
@@ -388,7 +388,7 @@ async function loadDashboard() {
     buildDashboard(data.documents || []);
     show('dashboard-screen');
   } catch (e) {
-    showErr('×œ× × ×™×ª×Ÿ ×œ×˜×¢×•×Ÿ ××ª ×”×¨×©×™×ž×”: ' + e.message);
+    showErr('לא ניתן לטעון את הרשימה: ' + e.message);
   }
 }
 
@@ -397,34 +397,34 @@ function buildDashboard(docs) {
   const completed = docs.filter(d => d.status === 'completed');
   const pEl = document.getElementById('pending-list');
   const cEl = document.getElementById('completed-list');
-  pEl.innerHTML = pending.length   ? '' : '<div class="empty">××™×Ÿ ×ž×¡×ž×›×™× ×”×ž×ž×ª×™× ×™× ×œ×—×ª×™×ž×”</div>';
-  cEl.innerHTML = completed.length ? '' : '<div class="empty">××™×Ÿ ×ž×¡×ž×›×™× ×—×ª×•×ž×™× ×¢×“×™×™×Ÿ</div>';
+  pEl.innerHTML = pending.length   ? '' : '<div class="empty">אין מסמכים הממתינים לחתימה</div>';
+  cEl.innerHTML = completed.length ? '' : '<div class="empty">אין מסמכים חתומים עדיין</div>';
   pending.forEach(d   => pEl.appendChild(makeCard(d)));
   completed.forEach(d => cEl.appendChild(makeCard(d)));
 }
 
 function makeCard(doc) {
   const ext   = (doc.fileName.split('.').pop() || '').toLowerCase();
-  const icons = { pdf:'ðŸ“„', docx:'ðŸ“', doc:'ðŸ“', xlsx:'ðŸ“Š', xls:'ðŸ“Š' };
+  const icons = { pdf:'📄', docx:'📝', doc:'📝', xlsx:'📊', xls:'📊' };
   const cls   = ext==='pdf' ? 'pdf' : (ext==='docx'||ext==='doc') ? 'docx' : (ext==='xlsx'||ext==='xls') ? 'xlsx' : 'other';
   const card  = document.createElement('div');
   card.className = `doc-card${doc.status === 'pending' ? ' clickable' : ''}`;
   card.innerHTML = `
     <div class="doc-left">
-      <div class="doc-icon ${cls}">${icons[ext] || 'ðŸ“Ž'}</div>
+      <div class="doc-icon ${cls}">${icons[ext] || '📎'}</div>
       <div>
         <div class="doc-name">${doc.fileName}</div>
         <div class="doc-date">${doc.createdAt ? fmtDate(doc.createdAt) : ''}</div>
       </div>
     </div>
-    <div class="badge ${doc.status}">${doc.status === 'pending' ? '×ž×ž×ª×™×Ÿ' : '×—×ª×•× âœ“'}</div>
+    <div class="badge ${doc.status}">${doc.status === 'pending' ? 'ממתין' : 'חתום ✓'}</div>
   `;
   if (doc.status === 'pending') card.onclick = () => openByToken(doc.token);
   return card;
 }
 
 function backToDash() {
-  // Full state reset â€” prevents anything being "stuck"
+  // Full state reset — prevents anything being "stuck"
   docBytes = null;
   signedBytes = null;
   currentToken = null;
@@ -437,7 +437,7 @@ function backToDash() {
   document.getElementById('viewer-body').innerHTML = '';
 
   const btn = document.getElementById('submit-btn');
-  btn.textContent   = '×©×œ×— ×ž×¡×ž×š ×—×ª×•×';
+  btn.textContent   = 'שלח מסמך חתום';
   btn.disabled      = true;
   btn.style.display = '';
 
@@ -447,13 +447,13 @@ function backToDash() {
   loadDashboard();
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    UPLOAD
    FIX 1: Removed mode:'no-cors' so the response is readable.
    Content-Type: text/plain = simple request, no preflight needed.
    GAS web apps deployed "Anyone" return Access-Control-Allow-Origin: *.
    After storing, we get the token back and navigate directly to signing.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function handleUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -462,12 +462,12 @@ async function handleUpload(e) {
   const allowed = ['pdf', 'docx', 'doc', 'xlsx', 'xls'];
   const ext = file.name.split('.').pop().toLowerCase();
   if (!allowed.includes(ext)) {
-    alert('×¡×•×’ ×§×•×‘×¥ ×œ× × ×ª×ž×š. ×™×© ×œ×”×¢×œ×•×ª PDF, DOCX, DOC, XLSX, ××• XLS.');
+    alert('סוג קובץ לא נתמך. יש להעלות PDF, DOCX, DOC, XLSX, או XLS.');
     e.target.value = '';
     return;
   }
 
-  setLoading('×ž×¢×œ×” ×ž×¡×ž×šâ€¦');
+  setLoading('מעלה מסמך…');
 
   try {
     const b64  = await fileToB64(file);
@@ -483,7 +483,7 @@ async function handleUpload(e) {
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        // No mode:'no-cors' â†’ response is readable â†’ we can get the token
+        // No mode:'no-cors' → response is readable → we can get the token
         const res  = await fetchWithTimeout(APPS_SCRIPT_URL, {
           method:  'POST',
           headers: { 'Content-Type': 'text/plain' },
@@ -506,7 +506,7 @@ async function handleUpload(e) {
         return;
 
       } catch (err) {
-        if (err.name === 'AbortError') throw new Error('Request timed out â€” please try again');
+        if (err.name === 'AbortError') throw new Error('Request timed out — please try again');
         if (attempt === 3) throw err;
         await sleep(3000);
       }
@@ -515,7 +515,7 @@ async function handleUpload(e) {
     e.target.value = '';
 
     if (token) {
-      // Navigate straight to the signing interface â€” no dashboard detour
+      // Navigate straight to the signing interface — no dashboard detour
       await openByToken(token);
     } else {
       await loadDashboard();
@@ -523,18 +523,18 @@ async function handleUpload(e) {
 
   } catch (err) {
     console.error('Upload error:', err);
-    alert('×©×’×™××” ×‘×”×¢×œ××”: ' + err.message);
+    alert('שגיאה בהעלאה: ' + err.message);
     e.target.value = '';
     show('dashboard-screen');
     loadDashboard().catch(console.error);
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    OPEN DOCUMENT BY TOKEN
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function openByToken(token) {
-  setLoading('×˜×•×¢×Ÿ ×ž×¡×ž×šâ€¦');
+  setLoading('טוען מסמך…');
   currentToken = token;
 
   try {
@@ -547,7 +547,7 @@ async function openByToken(token) {
       document.getElementById('vtop-file').textContent = data.fileName || '';
       document.getElementById('viewer-body').innerHTML =
         `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#3a3a3a">
-           <div class="already-signed" style="max-width:340px">âœ“ ×ž×¡×ž×š ×–×” ×›×‘×¨ × ×—×ª×</div>
+           <div class="already-signed" style="max-width:340px">✓ מסמך זה כבר נחתם</div>
          </div>`;
       document.getElementById('submit-btn').style.display = 'none';
       show('viewer-screen');
@@ -555,12 +555,12 @@ async function openByToken(token) {
     }
     if (data.error) throw new Error(data.error);
 
-    currentFileName = data.fileName || '×ž×¡×ž×š';
+    currentFileName = data.fileName || 'מסמך';
     currentFileType = currentFileName.split('.').pop().toLowerCase();
     document.getElementById('vtop-file').textContent = currentFileName;
     document.getElementById('submit-btn').style.display = '';
     document.getElementById('submit-btn').disabled    = true;
-    document.getElementById('submit-btn').textContent = '×©×œ×— ×ž×¡×ž×š ×—×ª×•×';
+    document.getElementById('submit-btn').textContent = 'שלח מסמך חתום';
 
     // Decode base64 file bytes
     const clean = data.pdf.replace(/\s/g, '');
@@ -572,13 +572,13 @@ async function openByToken(token) {
     show('viewer-screen');
 
   } catch (err) {
-    showErr('×œ× × ×™×ª×Ÿ ×œ×˜×¢×•×Ÿ ××ª ×”×ž×¡×ž×š: ' + err.message);
+    showErr('לא ניתן לטעון את המסמך: ' + err.message);
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    BUILD VIEWER (dispatcher)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function buildViewer(bytes, type) {
   const body = document.getElementById('viewer-body');
   body.innerHTML = '';
@@ -595,18 +595,18 @@ async function buildViewer(bytes, type) {
   } else if (norm === 'xlsx' || norm === 'xls') {
     buildXlsxViewer(bytes, body);
   } else {
-    body.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#3a3a3a;color:white;font-size:14px;padding:32px">×ª×¦×•×’×” ×ž×§×“×™×ž×” ××™× ×” ×–×ž×™× ×” ×œ×¡×•×’ ×§×•×‘×¥ ×–×”.</div>`;
+    body.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#3a3a3a;color:white;font-size:14px;padding:32px">תצוגה מקדימה אינה זמינה לסוג קובץ זה.</div>`;
     buildSidebar(body);
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    PDF VIEWER
    FIX 2a: Use setTimeout(100) instead of requestAnimationFrame for
-            canvas init â€” rAF can fire before the strip is in the live DOM.
+            canvas init — rAF can fire before the strip is in the live DOM.
    FIX 2b: After render, auto-scroll the sig strip into view and show
             the floating hint button so users always see it.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function buildPDFViewer(bytes, body) {
   const area = document.createElement('div');
   area.className = 'doc-area';
@@ -658,23 +658,23 @@ function buildSigStrip() {
   strip.innerHTML = `
     <div class="strip-field">
       <div class="strip-line">
-        <input class="strip-input" id="signer-name" placeholder="×©× ×ž×œ×" oninput="checkReady()">
+        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
       </div>
-      <div class="strip-label">×©× ×ž×œ×</div>
+      <div class="strip-label">שם מלא</div>
     </div>
     <div class="strip-field">
       <div class="sig-canvas-wrap">
         <canvas id="sig-canvas" width="180" height="58"></canvas>
-        <div class="sig-ghost" id="sig-ghost-main">×—×ª×•× ×›××Ÿ</div>
+        <div class="sig-ghost" id="sig-ghost-main">חתום כאן</div>
       </div>
-      <div class="strip-label">×—×ª×™×ž×”</div>
-      <button class="clear-link" onclick="clearSig()">× ×§×”</button>
+      <div class="strip-label">חתימה</div>
+      <button class="clear-link" onclick="clearSig()">נקה</button>
     </div>
     <div class="strip-field">
       <div class="strip-line">
         <div class="strip-date-val">${today}</div>
       </div>
-      <div class="strip-label">×ª××¨×™×š</div>
+      <div class="strip-label">תאריך</div>
     </div>
   `;
   // setTimeout is more reliable than requestAnimationFrame for deferred DOM init
@@ -682,9 +682,9 @@ function buildSigStrip() {
   return strip;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    DOCX VIEWER
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function buildDocxViewer(bytes, body) {
   const area = document.createElement('div');
   area.className = 'docx-area';
@@ -694,15 +694,15 @@ async function buildDocxViewer(bytes, body) {
     const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
     area.innerHTML = result.value;
   } catch (err) {
-    area.innerHTML = `<p style="color:red">×©×’×™××” ×‘×˜×¢×™× ×ª DOCX: ${err.message}</p>`;
+    area.innerHTML = `<p style="color:red">שגיאה בטעינת DOCX: ${err.message}</p>`;
   }
 
   buildSidebar(body);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    XLSX VIEWER
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 function buildXlsxViewer(bytes, body) {
   const area = document.createElement('div');
   area.className = 'xlsx-area';
@@ -711,48 +711,48 @@ function buildXlsxViewer(bytes, body) {
     const wb = XLSX.read(bytes, { type: 'array' });
     area.innerHTML = XLSX.utils.sheet_to_html(wb.Sheets[wb.SheetNames[0]]);
   } catch (err) {
-    area.innerHTML = `<p style="color:red">×©×’×™××” ×‘×˜×¢×™× ×ª XLSX: ${err.message}</p>`;
+    area.innerHTML = `<p style="color:red">שגיאה בטעינת XLSX: ${err.message}</p>`;
   }
 
   body.appendChild(area);
   buildSidebar(body);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    SIDEBAR (DOCX / XLSX)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 function buildSidebar(body) {
   const today = new Date().toLocaleDateString('he-IL');
   const sb    = document.createElement('div');
   sb.className = 'sign-sidebar';
   sb.innerHTML = `
-    <div class="sidebar-title">×—×ª×™×ž×” ×¢×œ ×”×ž×¡×ž×š</div>
+    <div class="sidebar-title">חתימה על המסמך</div>
     <div class="sidebar-hr"></div>
     <div>
-      <div class="sf-label">×©× ×ž×œ× *</div>
-      <input class="sf-input" id="signer-name" placeholder="×©× ×ž×œ×" oninput="checkReady()">
+      <div class="sf-label">שם מלא *</div>
+      <input class="sf-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
     </div>
     <div>
-      <div class="sf-label">×ª××¨×™×š</div>
+      <div class="sf-label">תאריך</div>
       <input class="sf-input" value="${today}" readonly style="background:#fafafa;color:var(--ink-light)">
     </div>
     <div>
-      <div class="sf-label">×—×ª×™×ž×” *</div>
+      <div class="sf-label">חתימה *</div>
       <div class="sf-canvas-wrap">
         <canvas id="sig-canvas-side" width="240" height="100"></canvas>
-        <div class="sf-ghost" id="sig-ghost-side">×—×ª×•× ×›××Ÿ</div>
+        <div class="sf-ghost" id="sig-ghost-side">חתום כאן</div>
       </div>
-      <button class="clear-link" style="margin-top:6px" onclick="clearSig()">× ×§×” ×—×ª×™×ž×”</button>
+      <button class="clear-link" style="margin-top:6px" onclick="clearSig()">נקה חתימה</button>
     </div>
-    <div class="legal">×‘×©×œ×™×—×ª ×ž×¡×ž×š ×–×” ××ª×” ×ž××©×¨ ×©×§×¨××ª, ×”×‘× ×ª ×•×—×ª×ž×ª ×¢×œ×™×• ××œ×§×˜×¨×•× ×™×ª. ×—×ª×™×ž×” ×–×• ×ž×—×™×™×‘×ª ×ž×©×¤×˜×™×ª.</div>
+    <div class="legal">בשליחת מסמך זה אתה מאשר שקראת, הבנת וחתמת עליו אלקטרונית. חתימה זו מחייבת משפטית.</div>
   `;
   body.appendChild(sb);
   setTimeout(() => initSigCanvas('sig-canvas-side', 'sig-ghost-side'), 100);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    SIGNATURE CANVAS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 function initSigCanvas(id, ghostId) {
   const canvas = document.getElementById(id);
   if (!canvas) return;
@@ -812,19 +812,19 @@ function checkReady() {
   document.getElementById('submit-btn').disabled = !(nameEl && nameEl.value.trim() && hasSig);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    SUBMIT SIGNED DOCUMENT
-   FIX 3a â€“ PDF: signedBytes is set BEFORE any awaited backend call.
-   FIX 3b â€“ DOCX/XLSX: html2canvas captures the rendered content area;
+   FIX 3a – PDF: signedBytes is set BEFORE any awaited backend call.
+   FIX 3b – DOCX/XLSX: html2canvas captures the rendered content area;
              PDFLib assembles a multi-page signed PDF (content pages + sig page).
-   FIX 4  â€“ Backend call is fire-and-forget with timeout.
-             Success screen shows immediately after local signing â€” we never
+   FIX 4  – Backend call is fire-and-forget with timeout.
+             Success screen shows immediately after local signing — we never
              get "stuck" waiting for GAS to respond.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function submitSigned() {
   const btn = document.getElementById('submit-btn');
   btn.disabled    = true;
-  btn.textContent = '×ž×™×™×¦×¨ ×ž×¡×ž×š ×—×ª×•×...';
+  btn.textContent = 'מייצר מסמך חתום...';
 
   try {
     const { PDFDocument, rgb, StandardFonts } = PDFLib;
@@ -840,7 +840,7 @@ async function submitSigned() {
     let finalBytes;
     let signedFileName;
 
-    // â”€â”€ PDF: embed signature directly â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── PDF: embed signature directly ─────────────────────────
     if (currentFileType === 'pdf') {
       const pdfDoc   = await PDFDocument.load(docBytes);
       const pages    = pdfDoc.getPages();
@@ -878,29 +878,29 @@ async function submitSigned() {
       });
 
       finalBytes     = await pdfDoc.save();
-      signedFileName = '×—×ª×•×_' + currentFileName;
+      signedFileName = 'חתום_' + currentFileName;
 
-    // â”€â”€ DOCX / XLSX: snapshot rendered content â†’ signed PDF â”€â”€â”€
+    // ── DOCX / XLSX: snapshot rendered content → signed PDF ───
     } else {
-      btn.textContent = '×ž×¢×‘×“ ×ª×•×›×Ÿ...';
+      btn.textContent = 'מעבד תוכן...';
 
       const contentArea = document.querySelector('.docx-area') || document.querySelector('.xlsx-area');
       if (!contentArea) throw new Error('Content area not found');
 
       finalBytes     = await buildSignedPdfFromContent(contentArea, sigCanvas, signerName, signerDate, currentToken, currentFileName);
-      signedFileName = currentFileName.replace(/\.[^.]+$/, '') + '_×—×ª×•×.pdf';
+      signedFileName = currentFileName.replace(/\.[^.]+$/, '') + '_חתום.pdf';
     }
 
-    // â”€â”€ Store signed bytes IMMEDIATELY (before any async backend work) â”€â”€
+    // ── Store signed bytes IMMEDIATELY (before any async backend work) ──
     signedBytes = finalBytes;
 
-    btn.textContent = '×©×•×œ×—...';
+    btn.textContent = 'שולח...';
 
     // Get signature image for backend record
     const sigB64    = sigCanvas.toDataURL('image/png').split(',')[1];
     const signedB64 = await blobToB64(new Blob([finalBytes]));
 
-    // Fire-and-forget backend call â€” success screen does NOT wait for this.
+    // Fire-and-forget backend call — success screen does NOT wait for this.
     // The local PDF is already signed; GAS call is for record-keeping + email.
     fetchWithTimeout(APPS_SCRIPT_URL, {
       method:  'POST',
@@ -916,24 +916,24 @@ async function submitSigned() {
       })
     }, 45000).catch(err => console.warn('Backend notification failed (non-blocking):', err));
 
-    // Navigate to success immediately â€” the signed PDF is ready to download
+    // Navigate to success immediately — the signed PDF is ready to download
     document.getElementById('success-msg').textContent =
-      '×”×ž×¡×ž×š ×”×—×ª×•× ×ž×•×›×Ÿ ×œ×”×•×¨×“×”. ×¢×“×›×•×Ÿ ×”×¨×©×™×ž×” ×¢×©×•×™ ×œ×§×—×ª ×ž×¡×¤×¨ ×©× ×™×•×ª.';
+      'המסמך החתום מוכן להורדה. עדכון הרשימה עשוי לקחת מספר שניות.';
     show('success-screen');
 
   } catch (err) {
     console.error('Submit error:', err);
-    alert('×©×’×™××” ×‘×©×œ×™×—×”: ' + err.message);
+    alert('שגיאה בשליחה: ' + err.message);
     btn.disabled    = false;
-    btn.textContent = '×©×œ×— ×ž×¡×ž×š ×—×ª×•×';
+    btn.textContent = 'שלח מסמך חתום';
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    BUILD SIGNED PDF FROM DOCX / XLSX CONTENT
    Uses html2canvas to snapshot the rendered HTML, then slices it into
    A4 pages and adds a professional signature certificate page at the end.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signerDate, token, fileName) {
   const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
@@ -973,7 +973,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
   const cW   = A4_W - 2 * M; // usable page width
   const cH   = A4_H - 2 * M; // usable page height
 
-  // Scale: canvas pixels â†’ PDF points
+  // Scale: canvas pixels → PDF points
   const scale       = cW / fullCanvas.width;
   const totalScaled = fullCanvas.height * scale;
   const numPages    = Math.ceil(totalScaled / cH);
@@ -982,7 +982,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
   const font     = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // â”€â”€ Content pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Content pages ────────────────────────────────────────────
   for (let p = 0; p < numPages; p++) {
     // Source rect in full-canvas pixel coords
     const srcY = Math.round(p * cH / scale);
@@ -1014,7 +1014,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
     });
   }
 
-  // â”€â”€ Signature certificate page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Signature certificate page ───────────────────────────────
   const sp = pdfDoc.addPage([A4_W, A4_H]);
 
   // Blue header bar
@@ -1022,7 +1022,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
   sp.drawText('Electronic Signature Certificate', {
     x: M, y: A4_H - 48, size: 20, font: fontBold, color: rgb(1, 1, 1)
   });
-  sp.drawText('××™×©×•×¨ ×—×ª×™×ž×” ××œ×§×˜×¨×•× ×™×ª', {
+  sp.drawText('אישור חתימה אלקטרונית', {
     x: M, y: A4_H - 72, size: 12, font, color: rgb(0.80, 0.88, 1.0)
   });
 
@@ -1040,7 +1040,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
 
   // Signer name
   sp.drawText('Signer', { x: M, y: A4_H - 250, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawText(signerName || 'â€”', { x: M, y: A4_H - 270, size: 15, font: fontBold, color: rgb(0.05, 0.05, 0.05) });
+  sp.drawText(signerName || '—', { x: M, y: A4_H - 270, size: 15, font: fontBold, color: rgb(0.05, 0.05, 0.05) });
 
   // Signature image box
   const sigBoxY = A4_H - 400;
@@ -1089,21 +1089,21 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
   return await pdfDoc.save();
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════
    DOWNLOAD SIGNED FILE
    All signed copies are now PDFs (PDFLib output).
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════ */
 function downloadSigned() {
   if (!signedBytes || (signedBytes.length !== undefined && signedBytes.length === 0)) {
-    alert('××™×Ÿ ×§×•×‘×¥ ×œ×”×•×¨×“×”');
+    alert('אין קובץ להורדה');
     return;
   }
 
   // Signed copies are always PDF (even for docx/xlsx originals)
   const mime = 'application/pdf';
   const name = currentFileType === 'pdf'
-    ? '×—×ª×•×_' + currentFileName
-    : currentFileName.replace(/\.[^.]+$/, '') + '_×—×ª×•×.pdf';
+    ? 'חתום_' + currentFileName
+    : currentFileName.replace(/\.[^.]+$/, '') + '_חתום.pdf';
 
   const blob = new Blob([signedBytes], { type: mime });
   const url  = URL.createObjectURL(blob);
