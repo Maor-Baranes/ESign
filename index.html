@@ -274,7 +274,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 /* ══════════════════════════════════════════
    CONFIGURATION  — replace YOUR_DEPLOYMENT_ID
 ══════════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIMVK7wYHNsAIvbncKoiImrwLhKEzwkXV7vhG3YNom-x4xYwzCwcXtIiNUfs8GgZYI/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: 'signer@gmail.com' },
@@ -883,38 +883,14 @@ async function submitSigned() {
       const pdfDoc   = await PDFDocument.load(docBytes, { ignoreEncryption: true });
       const pages    = pdfDoc.getPages();
       const lastPage = pages[pages.length - 1];
-      const font     = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const { width } = lastPage.getSize();
 
-      // Signature image
-      const sigDataUrl  = sigCanvas.toDataURL('image/png');
-      const sigPngBytes = Uint8Array.from(atob(sigDataUrl.split(',')[1]), c => c.charCodeAt(0));
-      const sigImg      = await pdfDoc.embedPng(sigPngBytes);
-
-      // Draw grey footer strip
-      lastPage.drawRectangle({
-        x: 0, y: 0, width, height: 95,
-        color: rgb(0.975, 0.975, 0.975)
-      });
-      lastPage.drawLine({
-        start: { x: 0, y: 95 }, end: { x: width, y: 95 },
-        thickness: 1.5, color: rgb(0.11, 0.31, 0.85)
-      });
-      // Signature image (centred)
-      lastPage.drawImage(sigImg, { x: width / 2 - 70, y: 42, width: 140, height: 46 });
-      // Signer name rendered via canvas PNG — handles Hebrew / any Unicode
-      const nameImgBytes = textToImagePng(`Signed by: ${signerName}`, { fontSize: 10, direction: 'ltr' });
-      const nameImg      = await pdfDoc.embedPng(nameImgBytes);
-      const nameDims     = nameImg.scale(1);
-      lastPage.drawImage(nameImg, { x: 8, y: 68, width: Math.min(nameDims.width, width / 2 - 16), height: nameDims.height });
-      // Date (right side — ASCII only, drawText is safe)
-      lastPage.drawText(`Date: ${signerDate}`, {
-        x: width - 120, y: 72, size: 10, font, color: rgb(0.1, 0.1, 0.1)
-      });
-      // Document ID (bottom centre)
-      lastPage.drawText(`ID: ${currentToken}`, {
-        x: width / 2 - 50, y: 14, size: 6.5, font, color: rgb(0.65, 0.65, 0.65)
-      });
+      // Render the sig strip exactly as it appears in the viewer — filled in
+      const stripPngBytes = await renderSigStripToImage(signerName, sigCanvas, signerDate);
+      const stripImg      = await pdfDoc.embedPng(stripPngBytes);
+      const stripAspect   = stripImg.height / stripImg.width;
+      const stripH        = Math.round(width * stripAspect);
+      lastPage.drawImage(stripImg, { x: 0, y: 0, width, height: stripH });
 
       finalBytes     = await pdfDoc.save();
       signedFileName = 'חתום_' + currentFileName;
@@ -969,14 +945,104 @@ async function submitSigned() {
 }
 
 /* ══════════════════════════════════════════
+   RENDER SIG STRIP TO IMAGE
+   Builds an off-screen div that looks exactly like the signed sig strip
+   (filled in with name, drawn signature, and date), snapshots it with
+   html2canvas, and returns PNG bytes. Works for any Unicode / Hebrew text
+   because the browser canvas handles all scripts natively.
+══════════════════════════════════════════ */
+async function renderSigStripToImage(signerName, sigCanvas, signerDate) {
+  const sigDataUrl = sigCanvas.toDataURL('image/png');
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;background:#fff;z-index:-1;';
+
+  wrap.innerHTML = `
+    <div style="
+      background:#fff;
+      border-top:2.5px solid #1d4ed8;
+      width:100%;
+      padding:18px 28px 16px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      direction:rtl;
+      font-family:DM Sans,Arial,sans-serif;
+      box-sizing:border-box;
+    ">
+      <!-- Name field -->
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
+        <div style="
+          width:100%;
+          border-bottom:1.5px solid #333;
+          min-height:48px;
+          display:flex;
+          align-items:flex-end;
+          justify-content:center;
+          padding-bottom:5px;
+          font-size:14px;
+          color:#111;
+          direction:rtl;
+          word-break:break-word;
+          text-align:center;
+        ">${signerName}</div>
+        <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.05em;margin-top:5px;">שם מלא</div>
+      </div>
+
+      <!-- Signature field -->
+      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+        <div style="width:180px;border-bottom:1.5px solid #333;margin-bottom:5px;">
+          <img src="${sigDataUrl}" width="180" height="58" style="display:block;width:180px;height:58px;">
+        </div>
+        <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.05em;">חתימה</div>
+      </div>
+
+      <!-- Date field -->
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
+        <div style="
+          width:100%;
+          border-bottom:1.5px solid #333;
+          min-height:48px;
+          display:flex;
+          align-items:flex-end;
+          justify-content:center;
+          padding-bottom:5px;
+          font-size:13px;
+          color:#444;
+          text-align:center;
+        ">${signerDate}</div>
+        <div style="font-size:10px;color:#666;font-weight:600;letter-spacing:.05em;margin-top:5px;">תאריך</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(wrap);
+  await sleep(120); // let browser finish layout + image decode
+
+  const c = await html2canvas(wrap.firstElementChild, {
+    scale:           2,
+    backgroundColor: '#ffffff',
+    useCORS:         true,
+    allowTaint:      true,
+    logging:         false
+  });
+
+  document.body.removeChild(wrap);
+
+  const dataUrl = c.toDataURL('image/png');
+  return Uint8Array.from(atob(dataUrl.split(',')[1]), ch => ch.charCodeAt(0));
+}
+
+/* ══════════════════════════════════════════
    BUILD SIGNED PDF FROM DOCX / XLSX CONTENT
-   Uses html2canvas to snapshot the rendered HTML, then slices it into
-   A4 pages and adds a professional signature certificate page at the end.
+   Snapshots the rendered HTML into A4 pages, then appends the sig strip
+   (identical to the viewer UI) at the bottom of the last content page.
 ══════════════════════════════════════════ */
 async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signerDate, token, fileName) {
   const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
-  // Temporarily un-constrain the content element so html2canvas captures the full document
+  // Un-constrain so html2canvas captures the full document height
   const saved = {
     height:    contentEl.style.height,
     maxHeight: contentEl.style.maxHeight,
@@ -987,8 +1053,6 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
   contentEl.style.maxHeight = 'none';
   contentEl.style.overflow  = 'visible';
   contentEl.style.overflowY = 'visible';
-
-  // Let the browser re-layout
   await sleep(250);
 
   const fullCanvas = await html2canvas(contentEl, {
@@ -999,145 +1063,66 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
     logging:         false
   });
 
-  // Restore
   contentEl.style.height    = saved.height;
   contentEl.style.maxHeight = saved.maxHeight;
   contentEl.style.overflow  = saved.overflow;
   contentEl.style.overflowY = saved.overflowY;
 
-  // A4 in PDF points (72 dpi)
+  // Render the sig strip image (same as PDF viewer UI, filled in)
+  const stripPngBytes = await renderSigStripToImage(signerName, sigCanvas, signerDate);
+
+  // A4 dimensions in PDF points
   const A4_W = 595.28;
   const A4_H = 841.89;
-  const M    = 32;           // margin
-  const cW   = A4_W - 2 * M; // usable page width
-  const cH   = A4_H - 2 * M; // usable page height
+  const M    = 32;
+  const cW   = A4_W - 2 * M;
+  const cH   = A4_H - 2 * M;
 
-  // Scale: canvas pixels → PDF points
   const scale       = cW / fullCanvas.width;
   const totalScaled = fullCanvas.height * scale;
   const numPages    = Math.ceil(totalScaled / cH);
 
-  const pdfDoc   = await PDFDocument.create();
-  const font     = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const pdfDoc = await PDFDocument.create();
+  const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Embed the sig strip and compute its rendered height in PDF points
+  const stripImg    = await pdfDoc.embedPng(stripPngBytes);
+  const stripAspect = stripImg.height / stripImg.width;
+  const stripH      = Math.round(cW * stripAspect); // height in PDF points
 
   // ── Content pages ────────────────────────────────────────────
   for (let p = 0; p < numPages; p++) {
-    // Source rect in full-canvas pixel coords
     const srcY = Math.round(p * cH / scale);
     const srcH = Math.min(Math.round(cH / scale), fullCanvas.height - srcY);
 
-    // Slice canvas
     const slice = document.createElement('canvas');
     slice.width  = fullCanvas.width;
     slice.height = Math.max(srcH, 1);
     slice.getContext('2d').drawImage(fullCanvas, 0, -srcY);
 
-    const jpgDataUrl  = slice.toDataURL('image/jpeg', 0.88);
-    const jpgB64      = jpgDataUrl.split(',')[1];
-    const jpgBytes    = Uint8Array.from(atob(jpgB64), c => c.charCodeAt(0));
-    const jpgImg      = await pdfDoc.embedJpg(jpgBytes);
+    const jpgDataUrl = slice.toDataURL('image/jpeg', 0.88);
+    const jpgBytes   = Uint8Array.from(atob(jpgDataUrl.split(',')[1]), c => c.charCodeAt(0));
+    const jpgImg     = await pdfDoc.embedJpg(jpgBytes);
+    const drawH      = srcH * scale;
 
-    const drawH = srcH * scale;
-    const page  = pdfDoc.addPage([A4_W, A4_H]);
+    const page = pdfDoc.addPage([A4_W, A4_H]);
 
-    page.drawImage(jpgImg, {
-      x: M, y: A4_H - M - drawH,
-      width: cW, height: drawH
-    });
+    const isLast = (p === numPages - 1);
+    if (isLast) {
+      // Leave room for the sig strip at the bottom of the last page
+      const availH = Math.min(drawH, cH - stripH - 8);
+      page.drawImage(jpgImg, { x: M, y: A4_H - M - availH, width: cW, height: availH });
+      // Sig strip flush to the bottom margin
+      page.drawImage(stripImg, { x: M, y: M, width: cW, height: stripH });
+    } else {
+      page.drawImage(jpgImg, { x: M, y: A4_H - M - drawH, width: cW, height: drawH });
+    }
 
-    // Page number footer
-    page.drawText(`${p + 1} / ${numPages + 1}`, {
-      x: A4_W / 2 - 14, y: 12, size: 8,
+    page.drawText(`${p + 1} / ${numPages}`, {
+      x: A4_W / 2 - 10, y: 10, size: 7,
       font, color: rgb(0.65, 0.65, 0.65)
     });
   }
-
-  // ── Signature certificate page ───────────────────────────────
-  const sp = pdfDoc.addPage([A4_W, A4_H]);
-
-  // Blue header bar
-  sp.drawRectangle({ x: 0, y: A4_H - 90, width: A4_W, height: 90, color: rgb(0.11, 0.31, 0.85) });
-
-  // Static English labels — safe for WinAnsi drawText
-  sp.drawText('Electronic Signature Certificate', {
-    x: M, y: A4_H - 48, size: 20, font: fontBold, color: rgb(1, 1, 1)
-  });
-  sp.drawText('Legally binding electronic signature record', {
-    x: M, y: A4_H - 72, size: 12, font, color: rgb(0.80, 0.88, 1.0)
-  });
-
-  // Document details box (background + static labels)
-  const boxTop = A4_H - 130;
-  sp.drawRectangle({
-    x: M, y: boxTop - 90, width: A4_W - 2 * M, height: 90,
-    color: rgb(0.96, 0.97, 1.0),
-    borderColor: rgb(0.72, 0.79, 0.95), borderWidth: 1
-  });
-  sp.drawText('Document Information', { x: M + 14, y: boxTop - 22, size: 10, font: fontBold, color: rgb(0.15, 0.25, 0.55) });
-
-  // File name — may be Hebrew → rendered via canvas PNG to avoid WinAnsi crash
-  const fileImgBytes = textToImagePng(`File: ${fileName}`, { fontSize: 10, color: '#333333', direction: 'ltr', maxWidth: 480 });
-  const fileImg      = await pdfDoc.embedPng(fileImgBytes);
-  const fileDims     = fileImg.scale(1);
-  sp.drawImage(fileImg, { x: M + 14, y: boxTop - 54, width: Math.min(fileDims.width, A4_W - 2*M - 28), height: fileDims.height });
-
-  // Signed on + document ID — ASCII only, drawText safe
-  sp.drawText(`Signed on: ${signerDate}`, { x: M + 14, y: boxTop - 68, size: 10, font, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawText(`Document ID: ${token}`,    { x: M + 14, y: boxTop - 82, size: 9,  font, color: rgb(0.4, 0.4, 0.4) });
-
-  // Signer section label
-  sp.drawText('Signer', { x: M, y: A4_H - 250, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
-
-  // Signer name — may be Hebrew → canvas PNG
-  const snImgBytes = textToImagePng(signerName || '—', { fontSize: 15, bold: true, color: '#0d0d0d', direction: 'rtl', maxWidth: 460 });
-  const snImg      = await pdfDoc.embedPng(snImgBytes);
-  const snDims     = snImg.scale(1);
-  sp.drawImage(snImg, { x: M, y: A4_H - 284, width: Math.min(snDims.width, A4_W - 2*M), height: snDims.height });
-
-  // Signature image box
-  const sigBoxY = A4_H - 420;
-  sp.drawText('Signature', { x: M, y: sigBoxY + 108, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawRectangle({
-    x: M, y: sigBoxY, width: 230, height: 90,
-    color: rgb(0.99, 0.99, 0.99),
-    borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 1
-  });
-
-  const sigPngDataUrl  = sigCanvas.toDataURL('image/png');
-  const sigPngBytes    = Uint8Array.from(atob(sigPngDataUrl.split(',')[1]), c => c.charCodeAt(0));
-  const sigPngImg      = await pdfDoc.embedPng(sigPngBytes);
-  sp.drawImage(sigPngImg, { x: M + 8, y: sigBoxY + 6, width: 214, height: 76 });
-
-  // Printed name under sig line — may be Hebrew → canvas PNG
-  sp.drawLine({
-    start: { x: M, y: sigBoxY - 8 }, end: { x: M + 230, y: sigBoxY - 8 },
-    thickness: 1, color: rgb(0.35, 0.35, 0.35)
-  });
-  const printedBytes = textToImagePng(signerName || '', { fontSize: 9, color: '#777777', direction: 'rtl', maxWidth: 220 });
-  const printedImg   = await pdfDoc.embedPng(printedBytes);
-  const printedDims  = printedImg.scale(1);
-  sp.drawImage(printedImg, { x: M, y: sigBoxY - 30, width: Math.min(printedDims.width, 230), height: printedDims.height });
-
-  // Legal disclaimer — static English, drawText safe
-  sp.drawLine({
-    start: { x: M, y: 72 }, end: { x: A4_W - M, y: 72 },
-    thickness: 0.5, color: rgb(0.80, 0.80, 0.80)
-  });
-  sp.drawText(
-    'This certificate confirms that the above-named individual has electronically signed the referenced document.',
-    { x: M, y: 58, size: 7.5, font, color: rgb(0.50, 0.50, 0.50), maxWidth: A4_W - 2 * M }
-  );
-  sp.drawText(
-    'This electronic signature is legally binding in accordance with applicable electronic signature laws.',
-    { x: M, y: 44, size: 7.5, font, color: rgb(0.50, 0.50, 0.50), maxWidth: A4_W - 2 * M }
-  );
-
-  // Page number on sig page
-  sp.drawText(`${numPages + 1} / ${numPages + 1}`, {
-    x: A4_W / 2 - 14, y: 12, size: 8,
-    font, color: rgb(0.65, 0.65, 0.65)
-  });
 
   return await pdfDoc.save();
 }
