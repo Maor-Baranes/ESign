@@ -274,7 +274,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 /* ══════════════════════════════════════════
    CONFIGURATION  — replace YOUR_DEPLOYMENT_ID
 ══════════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIMVK7wYHNsAIvbncKoiImrwLhKEzwkXV7vhG3YNom-x4xYwzCwcXtIiNUfs8GgZYI/exec';
 
 const CREDENTIALS = {
   'signer': { password: 'sign123', email: 'signer@gmail.com' },
@@ -813,6 +813,44 @@ function checkReady() {
 }
 
 /* ══════════════════════════════════════════
+   TEXT → PNG IMAGE HELPER
+   Renders any Unicode / Hebrew / RTL text via a browser canvas and returns
+   a Uint8Array PNG. Used everywhere PDFLib's WinAnsi drawText would crash.
+══════════════════════════════════════════ */
+function textToImagePng(text, {
+  fontSize   = 14,
+  fontFamily = 'DM Sans, Arial, sans-serif',
+  color      = '#111111',
+  bold       = false,
+  direction  = 'rtl',   // 'rtl' for Hebrew, 'ltr' otherwise
+  padding    = 6,
+  maxWidth   = 400
+} = {}) {
+  // Measure first
+  const measure = document.createElement('canvas');
+  const mctx    = measure.getContext('2d');
+  mctx.font     = `${bold ? '700' : '400'} ${fontSize}px ${fontFamily}`;
+  const tw      = Math.min(mctx.measureText(text).width, maxWidth) + padding * 2;
+  const th      = fontSize * 1.5 + padding * 2;
+
+  const c   = document.createElement('canvas');
+  c.width   = Math.ceil(tw);
+  c.height  = Math.ceil(th);
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.font      = `${bold ? '700' : '400'} ${fontSize}px ${fontFamily}`;
+  ctx.fillStyle = color;
+  ctx.direction = direction;
+  ctx.textAlign = direction === 'rtl' ? 'right' : 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, direction === 'rtl' ? c.width - padding : padding, c.height / 2, maxWidth);
+
+  const dataUrl = c.toDataURL('image/png');
+  const b64     = dataUrl.split(',')[1];
+  return Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+}
+
+/* ══════════════════════════════════════════
    SUBMIT SIGNED DOCUMENT
    FIX 3a – PDF: signedBytes is set BEFORE any awaited backend call.
    FIX 3b – DOCX/XLSX: html2canvas captures the rendered content area;
@@ -864,14 +902,14 @@ async function submitSigned() {
       });
       // Signature image (centred)
       lastPage.drawImage(sigImg, { x: width / 2 - 70, y: 42, width: 140, height: 46 });
-      // Signer name (right side) — strip non-Latin chars; WinAnsi can't encode Hebrew
-      const safeSignerNamePdf = signerName.split('').filter(c => c.charCodeAt(0) < 256).join('') || signerName;
-      lastPage.drawText(`Signed by: ${safeSignerNamePdf}`, {
-        x: width - 30, y: 72, size: 10, font, color: rgb(0.1, 0.1, 0.1)
-      });
-      // Date (left side)
+      // Signer name rendered via canvas PNG — handles Hebrew / any Unicode
+      const nameImgBytes = textToImagePng(`Signed by: ${signerName}`, { fontSize: 10, direction: 'ltr' });
+      const nameImg      = await pdfDoc.embedPng(nameImgBytes);
+      const nameDims     = nameImg.scale(1);
+      lastPage.drawImage(nameImg, { x: 8, y: 68, width: Math.min(nameDims.width, width / 2 - 16), height: nameDims.height });
+      // Date (right side — ASCII only, drawText is safe)
       lastPage.drawText(`Date: ${signerDate}`, {
-        x: 30, y: 72, size: 10, font, color: rgb(0.1, 0.1, 0.1)
+        x: width - 120, y: 72, size: 10, font, color: rgb(0.1, 0.1, 0.1)
       });
       // Document ID (bottom centre)
       lastPage.drawText(`ID: ${currentToken}`, {
@@ -1020,15 +1058,8 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
 
   // Blue header bar
   sp.drawRectangle({ x: 0, y: A4_H - 90, width: A4_W, height: 90, color: rgb(0.11, 0.31, 0.85) });
-  // NOTE: PDFLib standard fonts (Helvetica etc.) use WinAnsi encoding and
-  // cannot render Hebrew or other non-Latin characters. All text on the
-  // certificate page is therefore kept in Latin/English only.
-  // The signer name field is also sanitised below for the same reason.
-  const safeSignerName = (signerName || '')
-    .split('').filter(c => c.charCodeAt(0) < 256).join('') || 'Signer';
-  const safeFileName = (fileName || 'document')
-    .split('').filter(c => c.charCodeAt(0) < 256).join('') || 'document';
 
+  // Static English labels — safe for WinAnsi drawText
   sp.drawText('Electronic Signature Certificate', {
     x: M, y: A4_H - 48, size: 20, font: fontBold, color: rgb(1, 1, 1)
   });
@@ -1036,7 +1067,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
     x: M, y: A4_H - 72, size: 12, font, color: rgb(0.80, 0.88, 1.0)
   });
 
-  // Document details box
+  // Document details box (background + static labels)
   const boxTop = A4_H - 130;
   sp.drawRectangle({
     x: M, y: boxTop - 90, width: A4_W - 2 * M, height: 90,
@@ -1044,17 +1075,29 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
     borderColor: rgb(0.72, 0.79, 0.95), borderWidth: 1
   });
   sp.drawText('Document Information', { x: M + 14, y: boxTop - 22, size: 10, font: fontBold, color: rgb(0.15, 0.25, 0.55) });
-  sp.drawText(`File: ${safeFileName}`,    { x: M + 14, y: boxTop - 40, size: 10, font, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawText(`Signed on: ${signerDate}`, { x: M + 14, y: boxTop - 58, size: 10, font, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawText(`Document ID: ${token}`,    { x: M + 14, y: boxTop - 76, size: 9,  font, color: rgb(0.4, 0.4, 0.4) });
 
-  // Signer name
+  // File name — may be Hebrew → rendered via canvas PNG to avoid WinAnsi crash
+  const fileImgBytes = textToImagePng(`File: ${fileName}`, { fontSize: 10, color: '#333333', direction: 'ltr', maxWidth: 480 });
+  const fileImg      = await pdfDoc.embedPng(fileImgBytes);
+  const fileDims     = fileImg.scale(1);
+  sp.drawImage(fileImg, { x: M + 14, y: boxTop - 54, width: Math.min(fileDims.width, A4_W - 2*M - 28), height: fileDims.height });
+
+  // Signed on + document ID — ASCII only, drawText safe
+  sp.drawText(`Signed on: ${signerDate}`, { x: M + 14, y: boxTop - 68, size: 10, font, color: rgb(0.2, 0.2, 0.2) });
+  sp.drawText(`Document ID: ${token}`,    { x: M + 14, y: boxTop - 82, size: 9,  font, color: rgb(0.4, 0.4, 0.4) });
+
+  // Signer section label
   sp.drawText('Signer', { x: M, y: A4_H - 250, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
-  sp.drawText(safeSignerName, { x: M, y: A4_H - 270, size: 15, font: fontBold, color: rgb(0.05, 0.05, 0.05) });
+
+  // Signer name — may be Hebrew → canvas PNG
+  const snImgBytes = textToImagePng(signerName || '—', { fontSize: 15, bold: true, color: '#0d0d0d', direction: 'rtl', maxWidth: 460 });
+  const snImg      = await pdfDoc.embedPng(snImgBytes);
+  const snDims     = snImg.scale(1);
+  sp.drawImage(snImg, { x: M, y: A4_H - 284, width: Math.min(snDims.width, A4_W - 2*M), height: snDims.height });
 
   // Signature image box
-  const sigBoxY = A4_H - 400;
-  sp.drawText('Signature', { x: M, y: sigBoxY + 100, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
+  const sigBoxY = A4_H - 420;
+  sp.drawText('Signature', { x: M, y: sigBoxY + 108, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2) });
   sp.drawRectangle({
     x: M, y: sigBoxY, width: 230, height: 90,
     color: rgb(0.99, 0.99, 0.99),
@@ -1066,17 +1109,17 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
   const sigPngImg      = await pdfDoc.embedPng(sigPngBytes);
   sp.drawImage(sigPngImg, { x: M + 8, y: sigBoxY + 6, width: 214, height: 76 });
 
-  // Signature line + printed name
+  // Printed name under sig line — may be Hebrew → canvas PNG
   sp.drawLine({
     start: { x: M, y: sigBoxY - 8 }, end: { x: M + 230, y: sigBoxY - 8 },
     thickness: 1, color: rgb(0.35, 0.35, 0.35)
   });
-  sp.drawText(safeSignerName, {
-    x: M + 65, y: sigBoxY - 22, size: 9,
-    font, color: rgb(0.45, 0.45, 0.45)
-  });
+  const printedBytes = textToImagePng(signerName || '', { fontSize: 9, color: '#777777', direction: 'rtl', maxWidth: 220 });
+  const printedImg   = await pdfDoc.embedPng(printedBytes);
+  const printedDims  = printedImg.scale(1);
+  sp.drawImage(printedImg, { x: M, y: sigBoxY - 30, width: Math.min(printedDims.width, 230), height: printedDims.height });
 
-  // Legal disclaimer
+  // Legal disclaimer — static English, drawText safe
   sp.drawLine({
     start: { x: M, y: 72 }, end: { x: A4_W - M, y: 72 },
     thickness: 0.5, color: rgb(0.80, 0.80, 0.80)
