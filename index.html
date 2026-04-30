@@ -107,18 +107,19 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
   width: 100%;
   padding: 18px 24px 14px;
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
   direction: rtl;
 }
 .strip-field { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.strip-line { width: 100%; border-bottom: 1.5px solid #333; margin-bottom: 5px; min-height: 42px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
+.strip-line { width: 100%; border-bottom: 1.5px solid #333; margin-bottom: 5px; min-height: 80px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
 .strip-label { font-size: 10px; color: #666; font-weight: 600; letter-spacing: .04em; }
 .strip-input { border: none; outline: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); text-align: center; width: 100%; }
 .strip-date-val { font-size: 12px; color: #555; text-align: center; }
-.sig-canvas-wrap { width: 180px; height: 58px; position: relative; cursor: crosshair; border-bottom: 1.5px solid #333; margin-bottom: 5px; }
-#sig-canvas { width: 180px; height: 58px; display: block; touch-action: none; }
+.sig-canvas-wrap { width: 240px; height: 80px; position: relative; cursor: crosshair; border-bottom: 1.5px solid #333; margin-bottom: 5px; background: #f8f8ff; border-radius: 6px 6px 0 0; transition: transform .18s, box-shadow .18s; }
+.sig-canvas-wrap:hover { transform: scale(1.13); transform-origin: bottom center; box-shadow: 0 8px 28px rgba(29,78,216,.18); z-index: 10; }
+#sig-canvas { width: 240px; height: 80px; display: block; touch-action: none; }
 .sig-ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #bbb; pointer-events: none; }
 .clear-link { font-size: 10px; color: var(--ink-light); cursor: pointer; text-decoration: underline; background: none; border: none; font-family: 'DM Sans', sans-serif; }
 
@@ -664,7 +665,7 @@ function buildSigStrip() {
     </div>
     <div class="strip-field">
       <div class="sig-canvas-wrap">
-        <canvas id="sig-canvas" width="180" height="58"></canvas>
+        <canvas id="sig-canvas" width="240" height="80"></canvas>
         <div class="sig-ghost" id="sig-ghost-main">חתום כאן</div>
       </div>
       <div class="strip-label">חתימה</div>
@@ -958,7 +959,7 @@ async function renderSigStripToImage(signerName, sigCanvas, signerDate) {
   const W    = 700 * S;     // strip width
   const PAD  = 28 * S;
   const FIELD_W = Math.floor((W - PAD * 2 - 32 * S) / 3);  // three equal columns
-  const SIG_W   = 200 * S;
+  const SIG_W   = 240 * S;
   const ROW_H   = 52 * S;   // height of the value row
   const LABEL_H = 22 * S;
   const TOP_PAD = 18 * S;
