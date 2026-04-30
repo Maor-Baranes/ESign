@@ -113,15 +113,100 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
   direction: rtl;
 }
 .strip-field { display: flex; flex-direction: column; align-items: center; flex: 1; }
-.strip-line { width: 100%; border-bottom: 1.5px solid #333; margin-bottom: 5px; min-height: 80px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
+.strip-line { width: 100%; border-bottom: 1.5px solid #333; margin-bottom: 5px; min-height: 80px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; }
 .strip-label { font-size: 10px; color: #666; font-weight: 600; letter-spacing: .04em; }
 .strip-input { border: none; outline: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); text-align: center; width: 100%; }
 .strip-date-val { font-size: 12px; color: #555; text-align: center; }
-.sig-canvas-wrap { width: 240px; height: 80px; position: relative; cursor: crosshair; border-bottom: 1.5px solid #333; margin-bottom: 5px; background: #f8f8ff; border-radius: 6px 6px 0 0; transition: transform .18s, box-shadow .18s; }
-.sig-canvas-wrap:hover { transform: scale(1.13); transform-origin: bottom center; box-shadow: 0 8px 28px rgba(29,78,216,.18); z-index: 10; }
-#sig-canvas { width: 240px; height: 80px; display: block; touch-action: none; }
-.sig-ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #bbb; pointer-events: none; }
+
+/* Signature click-to-open button (replaces inline canvas) */
+.sig-open-btn {
+  width: 200px; height: 80px;
+  border: 1.5px dashed #aaa;
+  border-radius: 6px;
+  background: #f8f8ff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; gap: 5px; transition: border-color .18s, background .18s;
+  margin-bottom: 5px;
+  border-bottom: 1.5px solid #333;
+  border-radius: 6px 6px 0 0;
+}
+.sig-open-btn:hover { border-color: #1d4ed8; background: #eff4ff; }
+.sig-open-btn .pen-icon { font-size: 22px; }
+.sig-open-btn .btn-label { font-size: 10px; color: #888; font-family: 'DM Sans',sans-serif; }
+/* When signed — show image preview */
+.sig-preview-wrap {
+  width: 200px; height: 80px;
+  border-bottom: 1.5px solid #333;
+  margin-bottom: 5px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; cursor: pointer; position: relative;
+}
+.sig-preview-img { max-width: 196px; max-height: 76px; display: block; }
+.sig-preview-edit { position: absolute; bottom: 4px; right: 4px; font-size: 9px; color: #1d4ed8; background: rgba(255,255,255,.85); padding: 1px 5px; border-radius: 3px; }
+
 .clear-link { font-size: 10px; color: var(--ink-light); cursor: pointer; text-decoration: underline; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+
+/* ── SIGNATURE MODAL ── */
+.sig-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); z-index: 1000;
+  align-items: center; justify-content: center;
+}
+.sig-modal-overlay.open { display: flex; }
+.sig-modal {
+  background: #fff; border-radius: 16px;
+  width: min(600px, 96vw);
+  box-shadow: 0 24px 60px rgba(0,0,0,.28);
+  overflow: hidden;
+  animation: modalIn .18s ease;
+}
+@keyframes modalIn { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.sig-modal-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sig-modal-title { font-family: 'DM Serif Display',serif; font-size: 20px; }
+.sig-modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #888; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+.sig-modal-close:hover { background: #f3f4f6; color: #333; }
+.sig-modal-body { padding: 20px 22px; }
+.sig-modal-canvas-wrap {
+  position: relative;
+  width: 100%; height: 200px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  background: #fafbff;
+  overflow: hidden;
+  cursor: crosshair;
+}
+#sig-canvas-modal {
+  display: block; width: 100%; height: 200px;
+  touch-action: none;
+}
+.sig-modal-ghost {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; pointer-events: none;
+}
+.sig-modal-ghost .ghost-line {
+  width: 60%; height: 1px; background: #ddd;
+  position: absolute; bottom: 52px;
+}
+.sig-modal-ghost .ghost-text { font-size: 13px; color: #bbb; margin-top: 12px; }
+.sig-modal-hint { font-size: 11px; color: #aaa; margin-top: 8px; text-align: center; }
+.sig-modal-footer {
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+}
+.sig-modal-left { display: flex; gap: 8px; }
+.btn-modal-clear { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 8px; background: none; font-family: 'DM Sans',sans-serif; font-size: 13px; cursor: pointer; color: var(--ink); }
+.btn-modal-clear:hover { border-color: var(--red); color: var(--red); }
+.btn-modal-cancel { padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 8px; background: none; font-family: 'DM Sans',sans-serif; font-size: 13px; cursor: pointer; color: var(--ink); }
+.btn-modal-apply { padding: 9px 24px; background: var(--blue); color: white; border: none; border-radius: 8px; font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-modal-apply:disabled { opacity: .4; cursor: not-allowed; }
+.btn-modal-apply:not(:disabled):hover { background: var(--blue-dark); }
 
 /* Sig strip scroll hint */
 .sig-strip-hint {
@@ -159,9 +244,6 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 .sf-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 7px; }
 .sf-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; }
 .sf-input:focus { border-color: var(--blue); }
-.sf-canvas-wrap { border: 1.5px dashed var(--border); border-radius: var(--r); background: #fafafa; position: relative; overflow: hidden; }
-#sig-canvas-side { display: block; width: 100%; height: 100px; cursor: crosshair; touch-action: none; }
-.sf-ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #bbb; pointer-events: none; }
 .legal { font-size: 11px; color: #aaa; line-height: 1.6; border-top: 1px solid var(--border); padding-top: 14px; }
 .already-signed { background: #dcfce7; color: #166534; border-radius: var(--r); padding: 14px; font-size: 13px; font-weight: 600; text-align: center; }
 
@@ -189,6 +271,35 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 </style>
 </head>
 <body>
+
+<!-- SIGNATURE MODAL -->
+<div class="sig-modal-overlay" id="sig-modal-overlay" onclick="handleModalOverlayClick(event)">
+  <div class="sig-modal">
+    <div class="sig-modal-header">
+      <div class="sig-modal-title">חתימה</div>
+      <button class="sig-modal-close" onclick="closeSigModal()">✕</button>
+    </div>
+    <div class="sig-modal-body">
+      <div class="sig-modal-canvas-wrap" id="sig-modal-canvas-wrap">
+        <canvas id="sig-canvas-modal"></canvas>
+        <div class="sig-modal-ghost" id="sig-modal-ghost">
+          <div class="ghost-line"></div>
+          <div class="ghost-text">חתום כאן</div>
+        </div>
+      </div>
+      <div class="sig-modal-hint">צייר את חתימתך בתוך המסגרת</div>
+    </div>
+    <div class="sig-modal-footer">
+      <div class="sig-modal-left">
+        <button class="btn-modal-clear" onclick="clearModalCanvas()">נקה</button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-modal-cancel" onclick="closeSigModal()">ביטול</button>
+        <button class="btn-modal-apply" id="btn-modal-apply" onclick="applySig()" disabled>אישור ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div id="loading-screen" class="screen">
@@ -432,6 +543,7 @@ function backToDash() {
   currentFileName = '';
   currentFileType = '';
   sigStripEl = null;
+  sigDataUrl = null;
   hasSig = false;
   drawing = false;
 
@@ -663,10 +775,10 @@ function buildSigStrip() {
       </div>
       <div class="strip-label">שם מלא</div>
     </div>
-    <div class="strip-field">
-      <div class="sig-canvas-wrap">
-        <canvas id="sig-canvas" width="240" height="80"></canvas>
-        <div class="sig-ghost" id="sig-ghost-main">חתום כאן</div>
+    <div class="strip-field" style="flex:0 0 auto;">
+      <div id="sig-display-area" class="sig-open-btn" onclick="openSigModal()">
+        <div class="pen-icon">✍️</div>
+        <div class="btn-label">לחץ לחתימה</div>
       </div>
       <div class="strip-label">חתימה</div>
       <button class="clear-link" onclick="clearSig()">נקה</button>
@@ -678,8 +790,6 @@ function buildSigStrip() {
       <div class="strip-label">תאריך</div>
     </div>
   `;
-  // setTimeout is more reliable than requestAnimationFrame for deferred DOM init
-  setTimeout(() => initSigCanvas('sig-canvas', 'sig-ghost-main'), 100);
   return strip;
 }
 
@@ -734,77 +844,155 @@ function buildSidebar(body) {
       <input class="sf-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
     </div>
     <div>
-      <div class="sf-label">תאריך</div>
-      <input class="sf-input" value="${today}" readonly style="background:#fafafa;color:var(--ink-light)">
-    </div>
-    <div>
       <div class="sf-label">חתימה *</div>
-      <div class="sf-canvas-wrap">
-        <canvas id="sig-canvas-side" width="240" height="100"></canvas>
-        <div class="sf-ghost" id="sig-ghost-side">חתום כאן</div>
+      <div id="sig-display-area" class="sig-open-btn" style="width:100%;box-sizing:border-box;" onclick="openSigModal()">
+        <div class="pen-icon">✍️</div>
+        <div class="btn-label">לחץ לחתימה</div>
       </div>
       <button class="clear-link" style="margin-top:6px" onclick="clearSig()">נקה חתימה</button>
+    </div>
+    <div>
+      <div class="sf-label">תאריך</div>
+      <input class="sf-input" value="${today}" readonly style="background:#fafafa;color:var(--ink-light)">
     </div>
     <div class="legal">בשליחת מסמך זה אתה מאשר שקראת, הבנת וחתמת עליו אלקטרונית. חתימה זו מחייבת משפטית.</div>
   `;
   body.appendChild(sb);
-  setTimeout(() => initSigCanvas('sig-canvas-side', 'sig-ghost-side'), 100);
 }
 
 /* ══════════════════════════════════════════
-   SIGNATURE CANVAS
+   SIGNATURE MODAL
 ══════════════════════════════════════════ */
-function initSigCanvas(id, ghostId) {
-  const canvas = document.getElementById(id);
-  if (!canvas) return;
+let modalDrawing = false, mlx = 0, mly = 0;
+let modalHasSig  = false;
+let sigDataUrl   = null;   // the final committed sig as data URL
+
+function openSigModal() {
+  const overlay = document.getElementById('sig-modal-overlay');
+  overlay.classList.add('open');
+
+  // Size the canvas to the wrap's actual pixel size
+  const wrap   = document.getElementById('sig-modal-canvas-wrap');
+  const canvas = document.getElementById('sig-canvas-modal');
+  canvas.width  = wrap.offsetWidth  || 556;
+  canvas.height = wrap.offsetHeight || 200;
+
   const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // If there's an existing sig, pre-draw it
+  if (sigDataUrl) {
+    const img = new Image();
+    img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+    img.src = sigDataUrl;
+    modalHasSig = true;
+  } else {
+    modalHasSig = false;
+  }
+
+  document.getElementById('sig-modal-ghost').style.display = modalHasSig ? 'none' : 'flex';
+  document.getElementById('btn-modal-apply').disabled = !modalHasSig;
+
+  initModalCanvas();
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSigModal() {
+  document.getElementById('sig-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  modalDrawing = false;
+}
+
+function handleModalOverlayClick(e) {
+  if (e.target === document.getElementById('sig-modal-overlay')) closeSigModal();
+}
+
+function initModalCanvas() {
+  const canvas = document.getElementById('sig-canvas-modal');
+  const ctx    = canvas.getContext('2d');
   ctx.strokeStyle = '#111';
-  ctx.lineWidth   = 2;
+  ctx.lineWidth   = 1.8;
   ctx.lineCap     = 'round';
   ctx.lineJoin    = 'round';
 
+  // Remove old listeners by cloning
+  const fresh = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(fresh, canvas);
+  const c = document.getElementById('sig-canvas-modal');
+  const cx = c.getContext('2d');
+  cx.strokeStyle = '#111'; cx.lineWidth = 1.8; cx.lineCap = 'round'; cx.lineJoin = 'round';
+
+  // Redraw existing if any
+  if (sigDataUrl) {
+    const img = new Image();
+    img.onload = () => cx.drawImage(img, 0, 0, c.width, c.height);
+    img.src = sigDataUrl;
+  }
+
   const pt = ev => {
-    const r = canvas.getBoundingClientRect(), s = ev.touches ? ev.touches[0] : ev;
-    return {
-      x: (s.clientX - r.left) * (canvas.width  / r.width),
-      y: (s.clientY - r.top)  * (canvas.height / r.height)
-    };
+    const r = c.getBoundingClientRect(), s = ev.touches ? ev.touches[0] : ev;
+    return { x: (s.clientX - r.left) * (c.width / r.width), y: (s.clientY - r.top) * (c.height / r.height) };
   };
-  const down = ev => { ev.preventDefault(); drawing = true; const p = pt(ev); lx = p.x; ly = p.y; };
+  const down = ev => { ev.preventDefault(); modalDrawing = true; const p = pt(ev); mlx = p.x; mly = p.y; };
   const move = ev => {
     ev.preventDefault();
-    if (!drawing) return;
+    if (!modalDrawing) return;
     const p = pt(ev);
-    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(p.x, p.y); ctx.stroke();
-    lx = p.x; ly = p.y;
+    cx.beginPath(); cx.moveTo(mlx, mly); cx.lineTo(p.x, p.y); cx.stroke();
+    mlx = p.x; mly = p.y;
   };
   const up = () => {
-    if (!drawing) return;
-    drawing = false; hasSig = true;
-    const g = document.getElementById(ghostId);
-    if (g) g.style.display = 'none';
-    checkReady();
+    if (!modalDrawing) return;
+    modalDrawing = false; modalHasSig = true;
+    document.getElementById('sig-modal-ghost').style.display = 'none';
+    document.getElementById('btn-modal-apply').disabled = false;
   };
 
-  canvas.addEventListener('mousedown',  down);
-  canvas.addEventListener('mousemove',  move);
-  canvas.addEventListener('mouseup',    up);
-  canvas.addEventListener('mouseleave', up);
-  canvas.addEventListener('touchstart', down, { passive: false });
-  canvas.addEventListener('touchmove',  move, { passive: false });
-  canvas.addEventListener('touchend',   up);
+  c.addEventListener('mousedown',  down);
+  c.addEventListener('mousemove',  move);
+  c.addEventListener('mouseup',    up);
+  c.addEventListener('mouseleave', up);
+  c.addEventListener('touchstart', down, { passive: false });
+  c.addEventListener('touchmove',  move, { passive: false });
+  c.addEventListener('touchend',   up);
+}
+
+function clearModalCanvas() {
+  const c = document.getElementById('sig-canvas-modal');
+  c.getContext('2d').clearRect(0, 0, c.width, c.height);
+  modalHasSig = false;
+  document.getElementById('sig-modal-ghost').style.display = 'flex';
+  document.getElementById('btn-modal-apply').disabled = true;
+}
+
+function applySig() {
+  const c = document.getElementById('sig-canvas-modal');
+  sigDataUrl = c.toDataURL('image/png');
+  hasSig     = true;
+
+  // Update the preview button wherever it lives (strip or sidebar)
+  const area = document.getElementById('sig-display-area');
+  if (area) {
+    area.className = 'sig-preview-wrap';
+    area.onclick   = openSigModal;
+    area.innerHTML = `<img class="sig-preview-img" src="${sigDataUrl}"><div class="sig-preview-edit">ערוך</div>`;
+  }
+
+  closeSigModal();
+  checkReady();
 }
 
 function clearSig() {
-  ['sig-canvas', 'sig-canvas-side'].forEach(id => {
-    const c = document.getElementById(id);
-    if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
-  });
-  hasSig = false;
-  ['sig-ghost-main', 'sig-ghost-side'].forEach(id => {
-    const g = document.getElementById(id);
-    if (g) g.style.display = 'flex';
-  });
+  sigDataUrl  = null;
+  hasSig      = false;
+  modalHasSig = false;
+
+  const area = document.getElementById('sig-display-area');
+  if (area) {
+    area.className = 'sig-open-btn';
+    area.onclick   = openSigModal;
+    area.innerHTML = `<div class="pen-icon">✍️</div><div class="btn-label">לחץ לחתימה</div>`;
+  }
   checkReady();
 }
 
@@ -872,9 +1060,8 @@ async function submitSigned() {
     const signerName = nameEl ? nameEl.value.trim() : '';
     const signerDate = new Date().toLocaleDateString('he-IL');
 
-    // Prefer the PDF strip canvas; fall back to sidebar canvas
-    const sigCanvas  = document.getElementById('sig-canvas') || document.getElementById('sig-canvas-side');
-    if (!sigCanvas) throw new Error('Signature canvas not found');
+    if (!sigDataUrl) throw new Error('No signature found');
+    const currentSigDataUrl = sigDataUrl;
 
     let finalBytes;
     let signedFileName;
@@ -887,7 +1074,7 @@ async function submitSigned() {
       const { width } = lastPage.getSize();
 
       // Render the sig strip exactly as it appears in the viewer — filled in
-      const stripPngBytes = await renderSigStripToImage(signerName, sigCanvas, signerDate);
+      const stripPngBytes = await renderSigStripToImage(signerName, currentSigDataUrl, signerDate);
       const stripImg      = await pdfDoc.embedPng(stripPngBytes);
       const stripAspect   = stripImg.height / stripImg.width;
       const stripH        = Math.round(width * stripAspect);
@@ -903,7 +1090,7 @@ async function submitSigned() {
       const contentArea = document.querySelector('.docx-area') || document.querySelector('.xlsx-area');
       if (!contentArea) throw new Error('Content area not found');
 
-      finalBytes     = await buildSignedPdfFromContent(contentArea, sigCanvas, signerName, signerDate, currentToken, currentFileName);
+      finalBytes     = await buildSignedPdfFromContent(contentArea, currentSigDataUrl, signerName, signerDate, currentToken, currentFileName);
       signedFileName = currentFileName.replace(/\.[^.]+$/, '') + '_חתום.pdf';
     }
 
@@ -913,7 +1100,7 @@ async function submitSigned() {
     btn.textContent = 'שולח...';
 
     // Get signature image for backend record
-    const sigB64    = sigCanvas.toDataURL('image/png').split(',')[1];
+    const sigB64    = currentSigDataUrl.split(',')[1];
     const signedB64 = await blobToB64(new Blob([finalBytes]));
 
     // Fire-and-forget backend call — success screen does NOT wait for this.
@@ -952,84 +1139,62 @@ async function submitSigned() {
    html2canvas, and returns PNG bytes. Works for any Unicode / Hebrew text
    because the browser canvas handles all scripts natively.
 ══════════════════════════════════════════ */
-async function renderSigStripToImage(signerName, sigCanvas, signerDate) {
-  // Draw the sig strip entirely with Canvas 2D — no DOM snapshot, no network requests.
-  // Scale 2× for sharpness when embedded in PDF.
-  const S    = 2;           // pixel scale
-  const W    = 700 * S;     // strip width
-  const PAD  = 28 * S;
-  const FIELD_W = Math.floor((W - PAD * 2 - 32 * S) / 3);  // three equal columns
-  const SIG_W   = 240 * S;
-  const ROW_H   = 52 * S;   // height of the value row
+async function renderSigStripToImage(signerName, sigDataUrlArg, signerDate) {
+  const S      = 2;
+  const W      = 700 * S;
+  const PAD    = 28 * S;
+  const FIELD_W = Math.floor((W - PAD * 2 - 32 * S) / 3);
+  const SIG_W   = 200 * S;
+  const ROW_H   = 80 * S;
   const LABEL_H = 22 * S;
   const TOP_PAD = 18 * S;
   const BOT_PAD = 16 * S;
-  const H = TOP_PAD + ROW_H + 6 * S + LABEL_H + BOT_PAD + 4 * S; // total height
+  const H = TOP_PAD + ROW_H + 6 * S + LABEL_H + BOT_PAD + 4 * S;
 
   const c   = document.createElement('canvas');
   c.width   = W;
   c.height  = H;
   const ctx = c.getContext('2d');
 
-  // White background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
-
-  // Blue top border
   ctx.fillStyle = '#1d4ed8';
   ctx.fillRect(0, 0, W, 3 * S);
 
-  const font = `Arial, sans-serif`;
+  const font = 'Arial, sans-serif';
 
-  // Helper: draw one field (value text or image, underline, label)
   function drawField(x, w, valueText, label, imgEl) {
-    const valueY  = TOP_PAD;
-    const lineY   = valueY + ROW_H;
-    const labelY  = lineY + 8 * S;
-
-    // Underline
+    const lineY  = TOP_PAD + ROW_H;
+    const labelY = lineY + 8 * S;
     ctx.strokeStyle = '#333333';
     ctx.lineWidth   = 1.5 * S;
-    ctx.beginPath();
-    ctx.moveTo(x, lineY);
-    ctx.lineTo(x + w, lineY);
-    ctx.stroke();
-
+    ctx.beginPath(); ctx.moveTo(x, lineY); ctx.lineTo(x + w, lineY); ctx.stroke();
     if (imgEl) {
-      // Signature image — center it vertically in the row
       const ih = Math.min(ROW_H - 4 * S, imgEl.height * (w / imgEl.width));
-      const iw = imgEl.width  * (ih / imgEl.height);
-      ctx.drawImage(imgEl, x + (w - iw) / 2, valueY + (ROW_H - ih) / 2, iw, ih);
+      const iw = imgEl.width * (ih / imgEl.height);
+      ctx.drawImage(imgEl, x + (w - iw) / 2, TOP_PAD + (ROW_H - ih) / 2, iw, ih);
     } else {
-      // Text value — centred, RTL-aware via measureText
-      ctx.font         = `${14 * S}px ${font}`;
-      ctx.fillStyle    = '#111111';
+      ctx.font = `${14 * S}px ${font}`;
+      ctx.fillStyle = '#111111';
       ctx.textBaseline = 'bottom';
-      ctx.textAlign    = 'center';
-      ctx.direction    = 'rtl';
+      ctx.textAlign = 'center';
+      ctx.direction = 'rtl';
       ctx.fillText(valueText, x + w / 2, lineY - 5 * S, w - 8 * S);
     }
-
-    // Label below the line
-    ctx.font         = `600 ${9 * S}px ${font}`;
-    ctx.fillStyle    = '#666666';
+    ctx.font = `600 ${9 * S}px ${font}`;
+    ctx.fillStyle = '#666666';
     ctx.textBaseline = 'top';
-    ctx.textAlign    = 'center';
-    ctx.direction    = 'ltr';
+    ctx.textAlign = 'center';
+    ctx.direction = 'ltr';
     ctx.fillText(label, x + w / 2, labelY);
   }
 
-  // Column x positions (RTL order: name | sig | date)
   const col1x = PAD;
   const col2x = PAD + FIELD_W + 16 * S;
   const col3x = PAD + FIELD_W + 16 * S + SIG_W + 16 * S;
 
-  // Load sig canvas image so we can drawImage it
   const sigImg = new Image();
-  await new Promise(res => {
-    sigImg.onload = res;
-    sigImg.src    = sigCanvas.toDataURL('image/png');
-  });
+  await new Promise(res => { sigImg.onload = res; sigImg.src = sigDataUrlArg; });
 
   drawField(col1x, FIELD_W, signerName, 'שם מלא', null);
   drawField(col2x, SIG_W,   '',         'חתימה',   sigImg);
@@ -1044,7 +1209,7 @@ async function renderSigStripToImage(signerName, sigCanvas, signerDate) {
    Snapshots the rendered HTML into A4 pages, then appends the sig strip
    (identical to the viewer UI) at the bottom of the last content page.
 ══════════════════════════════════════════ */
-async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signerDate, token, fileName) {
+async function buildSignedPdfFromContent(contentEl, sigDataUrlArg, signerName, signerDate, token, fileName) {
   const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
   // Un-constrain so html2canvas captures the full document height
@@ -1084,7 +1249,7 @@ async function buildSignedPdfFromContent(contentEl, sigCanvas, signerName, signe
   contentEl.style.overflowY = saved.overflowY;
 
   // Render the sig strip image (same as PDF viewer UI, filled in)
-  const stripPngBytes = await renderSigStripToImage(signerName, sigCanvas, signerDate);
+  const stripPngBytes = await renderSigStripToImage(signerName, sigDataUrlArg, signerDate);
 
   // A4 dimensions in PDF points
   const A4_W = 595.28;
