@@ -776,9 +776,11 @@ function buildSigStrip() {
       <div class="strip-label">שם מלא</div>
     </div>
     <div class="strip-field" style="flex:0 0 auto;">
-      <div id="sig-display-area" class="sig-open-btn" onclick="openSigModal()">
-        <div class="pen-icon">✍️</div>
-        <div class="btn-label">לחץ לחתימה</div>
+      <div class="strip-line" style="justify-content:center;padding-bottom:0;border-bottom:none;">
+        <div id="sig-display-area" class="sig-open-btn" onclick="openSigModal()">
+          <div class="pen-icon">✍️</div>
+          <div class="btn-label">לחץ לחתימה</div>
+        </div>
       </div>
       <div class="strip-label">חתימה</div>
       <button class="clear-link" onclick="clearSig()">נקה</button>
@@ -802,7 +804,7 @@ async function buildDocxViewer(bytes, body) {
   body.appendChild(area);
 
   try {
-    const result = await mammoth.convertToHtml({ arrayBuffer: bytes.buffer });
+    const result = await mammoth.convertToHtml({ arrayBuffer: bytes.slice().buffer });
     area.innerHTML = result.value;
   } catch (err) {
     area.innerHTML = `<p style="color:red">שגיאה בטעינת DOCX: ${err.message}</p>`;
@@ -1196,9 +1198,10 @@ async function renderSigStripToImage(signerName, sigDataUrlArg, signerDate) {
   const sigImg = new Image();
   await new Promise(res => { sigImg.onload = res; sigImg.src = sigDataUrlArg; });
 
-  drawField(col1x, FIELD_W, signerName, 'שם מלא', null);
+  // RTL order: name on RIGHT (col3x), sig in CENTRE (col2x), date on LEFT (col1x)
+  drawField(col3x, FIELD_W, signerName, 'שם מלא', null);
   drawField(col2x, SIG_W,   '',         'חתימה',   sigImg);
-  drawField(col3x, FIELD_W, signerDate, 'תאריך',   null);
+  drawField(col1x, FIELD_W, signerDate, 'תאריך',   null);
 
   const dataUrl = c.toDataURL('image/png');
   return Uint8Array.from(atob(dataUrl.split(',')[1]), ch => ch.charCodeAt(0));
