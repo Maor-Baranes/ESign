@@ -118,28 +118,23 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 .strip-input { border: none; outline: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); text-align: center; width: 100%; }
 .strip-date-val { font-size: 12px; color: #555; text-align: center; }
 
-/* Signature click-to-open button (replaces inline canvas) */
-.sig-open-btn {
-  width: 200px; height: 80px;
-  border: 1.5px dashed #aaa;
-  border-radius: 6px;
-  background: #f8f8ff;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  cursor: pointer; gap: 5px; transition: border-color .18s, background .18s;
-}
-.sig-open-btn:hover { border-color: #1d4ed8; background: #eff4ff; }
-.sig-open-btn .pen-icon { font-size: 22px; }
-.sig-open-btn .btn-label { font-size: 10px; color: #888; font-family: 'DM Sans',sans-serif; }
-/* When signed — show image preview */
-.sig-preview-wrap {
-  width: 200px; height: 80px;
+/* Signature field — identical structure to name/date: underlined area, content at bottom */
+.sig-field-line {
+  width: 100%;
   border-bottom: 1.5px solid #333;
   margin-bottom: 5px;
-  display: flex; align-items: center; justify-content: center;
-  background: #fff; cursor: pointer; position: relative;
+  min-height: 80px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  cursor: pointer;
+  position: relative;
 }
-.sig-preview-img { max-width: 196px; max-height: 76px; display: block; }
-.sig-preview-edit { position: absolute; bottom: 4px; right: 4px; font-size: 9px; color: #1d4ed8; background: rgba(255,255,255,.85); padding: 1px 5px; border-radius: 3px; }
+.sig-field-line:hover { background: rgba(29,78,216,.03); }
+.sig-field-hint { font-size: 11px; color: #bbb; font-style: italic; pointer-events: none; }
+.sig-field-img { max-width: 100%; max-height: 68px; display: block; pointer-events: none; }
+.sig-field-edit { position: absolute; top: 6px; left: 6px; font-size: 9px; color: #1d4ed8; background: rgba(255,255,255,.9); padding: 1px 5px; border-radius: 3px; pointer-events: none; }
 
 .clear-link { font-size: 10px; color: var(--ink-light); cursor: pointer; text-decoration: underline; background: none; border: none; font-family: 'DM Sans', sans-serif; }
 
@@ -772,12 +767,9 @@ function buildSigStrip() {
       </div>
       <div class="strip-label">תאריך</div>
     </div>
-    <div class="strip-field" style="flex:0 0 auto;">
-      <div class="strip-line" style="border-bottom:none;padding-bottom:0;align-items:center;">
-        <div id="sig-display-area" class="sig-open-btn" onclick="openSigModal()">
-          <div class="pen-icon">✍️</div>
-          <div class="btn-label">לחץ לחתימה</div>
-        </div>
+    <div class="strip-field" style="flex:0 0 auto;min-width:200px;">
+      <div id="sig-display-area" class="sig-field-line" onclick="openSigModal()">
+        <span class="sig-field-hint">✍ חתום כאן</span>
       </div>
       <div class="strip-label">חתימה</div>
     </div>
@@ -843,9 +835,8 @@ function buildSidebar(body) {
     </div>
     <div>
       <div class="sf-label">חתימה *</div>
-      <div id="sig-display-area" class="sig-open-btn" style="width:100%;box-sizing:border-box;" onclick="openSigModal()">
-        <div class="pen-icon">✍️</div>
-        <div class="btn-label">לחץ לחתימה</div>
+      <div id="sig-display-area" class="sig-field-line" style="width:100%;box-sizing:border-box;" onclick="openSigModal()">
+        <span class="sig-field-hint">✍ חתום כאן</span>
       </div>
       <button class="clear-link" style="margin-top:6px" onclick="clearSig()">נקה חתימה</button>
     </div>
@@ -968,12 +959,9 @@ function applySig() {
   sigDataUrl = c.toDataURL('image/png');
   hasSig     = true;
 
-  // Update the preview button wherever it lives (strip or sidebar)
   const area = document.getElementById('sig-display-area');
   if (area) {
-    area.className = 'sig-preview-wrap';
-    area.onclick   = openSigModal;
-    area.innerHTML = `<img class="sig-preview-img" src="${sigDataUrl}"><div class="sig-preview-edit">ערוך</div>`;
+    area.innerHTML = `<img class="sig-field-img" src="${sigDataUrl}"><div class="sig-field-edit">ערוך</div>`;
   }
 
   closeSigModal();
@@ -987,9 +975,7 @@ function clearSig() {
 
   const area = document.getElementById('sig-display-area');
   if (area) {
-    area.className = 'sig-open-btn';
-    area.onclick   = openSigModal;
-    area.innerHTML = `<div class="pen-icon">✍️</div><div class="btn-label">לחץ לחתימה</div>`;
+    area.innerHTML = `<span class="sig-field-hint">✍ חתום כאן</span>`;
   }
   checkReady();
 }
@@ -1194,11 +1180,9 @@ async function renderSigStripToImage(signerName, sigDataUrlArg, signerDate) {
   const sigImg = new Image();
   await new Promise(res => { sigImg.onload = res; sigImg.src = sigDataUrlArg; });
 
-  // Canvas is LTR: col1x=left=name, col2x=center=sig, col3x=right=date
-  // UI is RTL: name renders right, date renders left — they match when PDF is read RTL
-  drawField(col1x, FIELD_W, signerName, 'שם מלא', null);
+  drawField(col1x, FIELD_W, signerDate, 'תאריך',   null);
   drawField(col2x, SIG_W,   '',         'חתימה',   sigImg);
-  drawField(col3x, FIELD_W, signerDate, 'תאריך',   null);
+  drawField(col3x, FIELD_W, signerName, 'שם מלא', null);
 
   const dataUrl = c.toDataURL('image/png');
   return Uint8Array.from(atob(dataUrl.split(',')[1]), ch => ch.charCodeAt(0));
