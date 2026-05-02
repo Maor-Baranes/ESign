@@ -827,9 +827,9 @@ function buildSigStrip() {
   strip.innerHTML = `
     <div class="strip-field">
       <div class="strip-line">
-        <div class="strip-date-val">${today}</div>
+        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
       </div>
-      <div class="strip-label">תאריך</div>
+      <div class="strip-label">שם מלא</div>
     </div>
     <div class="strip-field" style="flex:0 0 auto;min-width:200px;">
       <div id="sig-display-area" class="sig-field-line" onclick="openSigModal()">
@@ -839,14 +839,14 @@ function buildSigStrip() {
     </div>
     <div class="strip-field">
       <div class="strip-line">
-        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
+        <div class="strip-date-val">${today}</div>
       </div>
-      <div class="strip-label">שם מלא</div>
+      <div class="strip-label">תאריך</div>
     </div>
   `;
   return strip;
 }
-
+  
 /* ══════════════════════════════════════════
    DOCX VIEWER
 ══════════════════════════════════════════ */
