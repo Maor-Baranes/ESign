@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>פורטל חתימה על מסמכים</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231d4ed8'/><text x='16' y='23' font-size='18' text-anchor='middle' font-family='serif' fill='white'>✍</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✍️</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -248,6 +250,10 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 .btn-download:hover { opacity: .88; }
 .btn-ghost2 { padding: 10px 22px; background: none; border: 1.5px solid var(--border); border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; color: var(--ink); }
 
+.dl-btn { padding: 5px 13px; background: none; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--blue); transition: background .15s, border-color .15s; white-space: nowrap; }
+.dl-btn:hover { background: #eff4ff; border-color: var(--blue); }
+.dl-btn:disabled { opacity: .5; cursor: not-allowed; }
+
 /* ── ERROR ── */
 #error-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 12px; }
 #error-screen h2 { font-family: 'DM Serif Display', serif; font-size: 26px; }
@@ -260,9 +266,17 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
   .sig-strip { flex-direction: column; align-items: center; }
   .dash-body { padding: 20px 14px; }
 }
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1f2937; color: #fff; font-size: 14px; font-family: 'DM Sans',sans-serif; padding: 13px 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.22); z-index: 3000; transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s; opacity: 0; pointer-events: none; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.error { background: var(--red); }
+.toast.success { background: var(--green); }
 </style>
 </head>
 <body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <!-- SIGNATURE MODAL -->
 <div class="sig-modal-overlay" id="sig-modal-overlay" onclick="handleModalOverlayClick(event)">
@@ -302,7 +316,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <!-- LOGIN -->
 <div id="login-screen" class="screen">
   <div class="login-wrap">
-    <div class="login-logo"><span>חתימה מהירה.</span></div>
+    <div class="login-logo">חתימה<span>.</span></div>
     <div class="login-sub">מערכת חתימה אלקטרונית מאובטחת</div>
     <div class="card">
       <div class="field">
@@ -323,7 +337,10 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <div id="dashboard-screen" class="screen">
   <div class="topbar">
     <div class="topbar-brand">חתימה<span>.</span></div>
-    <div class="topbar-user" id="topbar-user"></div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="topbar-user" id="topbar-user"></div>
+      <button onclick="doLogout()" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color:var(--ink-light);">יציאה</button>
+    </div>
   </div>
   <div class="dash-body">
     <div class="dash-header">
@@ -361,9 +378,10 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <div id="success-screen" class="screen">
   <div class="success-icon">✓</div>
   <h2>המסמך נחתם!</h2>
-  <p id="success-msg">המסמך החתום נשלח לכל הצדדים הרלוונטיים.</p>
-  <button class="btn-download" onclick="downloadSigned()">↓ הורד עותק חתום</button>
-  <button class="btn-ghost2" onclick="backToDash()" style="margin-top:8px">← חזרה לרשימה</button>
+  <p id="success-msg">המסמך החתום מוכן להורדה.</p>
+  <p style="font-size:13px;color:var(--red);font-weight:600;margin-top:-6px;">⚠ הורד לפני עזיבת הדף — הקובץ לא יהיה זמין לאחר מכן.</p>
+  <button class="btn-download" id="btn-download-signed" onclick="downloadSigned()">↓ הורד עותק חתום</button>
+  <button class="btn-ghost2" id="btn-back-success" onclick="backToDash()" style="margin-top:8px;opacity:.4;pointer-events:none;">← חזרה לרשימה</button>
 </div>
 
 <!-- ERROR -->
@@ -376,14 +394,10 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 
 <script>
 /* ══════════════════════════════════════════
-   CONFIGURATION  — replace YOUR_DEPLOYMENT_ID
+   CONFIGURATION
 ══════════════════════════════════════════ */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIMVK7wYHNsAIvbncKoiImrwLhKEzwkXV7vhG3YNom-x4xYwzCwcXtIiNUfs8GgZYI/exec';
-
-const CREDENTIALS = {
-  'signer': { password: 'sign123', email: 'signer@gmail.com' },
-  'admin':  { password: 'admin456', email: 'admin@gmail.com' }
-};
+// Users are managed in Code.gs — not stored here.
 /* ══════════════════════════════════════════ */
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -391,16 +405,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 // ── State ──────────────────────────────────
 let currentUser     = null;
-let docBytes        = null;   // original file bytes (Uint8Array)
-let signedBytes     = null;   // signed file bytes  (Uint8Array / ArrayBuffer)
+let docBytes        = null;
+let signedBytes     = null;
 let currentToken    = null;
 let currentFileName = '';
-let currentFileType = '';     // 'pdf' | 'docx' | 'doc' | 'xlsx' | 'xls'
+let currentFileType = '';
 let urlToken        = null;
 let hasSig          = false;
-let drawing         = false;
-let lx = 0, ly = 0;
-let sigStripEl      = null;   // reference to the PDF sig strip DOM node
+let sigStripEl      = null;
+let hasDownloaded   = false;   // tracks if user downloaded the signed copy
 
 window.addEventListener('load', () => {
   urlToken = new URLSearchParams(location.search).get('token');
@@ -461,20 +474,60 @@ function blobToB64(blob) {
 }
 
 /* ══════════════════════════════════════════
-   LOGIN
+   TOAST
 ══════════════════════════════════════════ */
-function doLogin() {
-  const u    = document.getElementById('username').value.trim();
-  const p    = document.getElementById('password').value;
-  const cred = CREDENTIALS[u];
-  if (cred && cred.password === p) {
-    document.getElementById('login-err').style.display = 'none';
-    currentUser = { username: u, email: cred.email };
-    if (urlToken) openByToken(urlToken);
-    else loadDashboard();
-  } else {
-    document.getElementById('login-err').style.display = 'block';
+let toastTimer = null;
+function showToast(msg, type = '', ms = 3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast${type ? ' ' + type : ''} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, ms);
+}
+
+/* ══════════════════════════════════════════
+   LOGIN / LOGOUT
+══════════════════════════════════════════ */
+async function doLogin() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  if (!u || !p) return;
+
+  const btn = document.querySelector('#login-screen .btn-primary');
+  btn.textContent = 'מתחבר...';
+  btn.disabled    = true;
+
+  try {
+    const res  = await fetchWithTimeout(
+      `${APPS_SCRIPT_URL}?action=login&username=${enc(u)}&password=${enc(p)}`
+    );
+    const data = await res.json();
+
+    if (data.error === 'invalid' || !data.success) {
+      document.getElementById('login-err').style.display = 'block';
+    } else {
+      document.getElementById('login-err').style.display = 'none';
+      currentUser = { username: u, email: data.email, displayName: data.displayName || u };
+      if (urlToken) openByToken(urlToken);
+      else loadDashboard();
+    }
+  } catch (err) {
+    showToast('שגיאת חיבור — נסה שוב', 'error');
+  } finally {
+    btn.textContent = 'כניסה ←';
+    btn.disabled    = false;
   }
+}
+
+function doLogout() {
+  currentUser = null;
+  docBytes = signedBytes = null;
+  currentToken = currentFileName = currentFileType = '';
+  urlToken = null;
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('login-err').style.display = 'none';
+  show('login-screen');
 }
 
 /* ══════════════════════════════════════════
@@ -512,18 +565,23 @@ function makeCard(doc) {
   const icons = { pdf:'📄', docx:'📝', doc:'📝', xlsx:'📊', xls:'📊' };
   const cls   = ext==='pdf' ? 'pdf' : (ext==='docx'||ext==='doc') ? 'docx' : (ext==='xlsx'||ext==='xls') ? 'xlsx' : 'other';
   const card  = document.createElement('div');
-  card.className = `doc-card${doc.status === 'pending' ? ' clickable' : ''}`;
+  const isPending   = doc.status === 'pending';
+  const isCompleted = doc.status === 'completed';
+  card.className = `doc-card${isPending ? ' clickable' : ''}`;
   card.innerHTML = `
     <div class="doc-left">
       <div class="doc-icon ${cls}">${icons[ext] || '📎'}</div>
       <div>
         <div class="doc-name">${doc.fileName}</div>
-        <div class="doc-date">${doc.createdAt ? fmtDate(doc.createdAt) : ''}</div>
+        <div class="doc-date">${doc.createdAt ? fmtDate(doc.createdAt) : ''}${doc.completedAt ? ' · נחתם ' + fmtDate(doc.completedAt) : ''}</div>
       </div>
     </div>
-    <div class="badge ${doc.status}">${doc.status === 'pending' ? 'ממתין' : 'חתום ✓'}</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      ${isCompleted ? `<button class="dl-btn" onclick="downloadCompletedDoc('${doc.token}','${doc.fileName}',this)">↓ הורד</button>` : ''}
+      <div class="badge ${doc.status}">${isPending ? 'ממתין' : 'חתום ✓'}</div>
+    </div>
   `;
-  if (doc.status === 'pending') card.onclick = () => openByToken(doc.token);
+  if (isPending) card.onclick = () => openByToken(doc.token);
   return card;
 }
 
@@ -567,7 +625,7 @@ async function handleUpload(e) {
   const allowed = ['pdf', 'docx', 'doc', 'xlsx', 'xls'];
   const ext = file.name.split('.').pop().toLowerCase();
   if (!allowed.includes(ext)) {
-    alert('סוג קובץ לא נתמך. יש להעלות PDF, DOCX, DOC, XLSX, או XLS.');
+    showToast('סוג קובץ לא נתמך — יש להעלות PDF, DOCX, DOC, XLSX, או XLS', 'error');
     e.target.value = '';
     return;
   }
@@ -689,7 +747,6 @@ async function buildViewer(bytes, type) {
   body.innerHTML = '';
   hasSig     = false;
   sigStripEl = null;
-  drawing    = false;
 
   const norm = type.toLowerCase();
 
@@ -746,9 +803,16 @@ async function buildPDFViewer(bytes, body) {
       sigStripEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 600);
 
-    // Also show a floating hint button in case the user scrolls away
     const hint = document.getElementById('sig-strip-hint');
     hint.classList.add('visible');
+
+    // Auto-hide the hint when the strip scrolls into view
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        hint.classList.toggle('visible', !e.isIntersecting);
+      });
+    }, { threshold: 0.5 });
+    observer.observe(sigStripEl);
   }
 }
 
@@ -763,21 +827,21 @@ function buildSigStrip() {
   strip.innerHTML = `
     <div class="strip-field">
       <div class="strip-line">
-        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
+        <div class="strip-date-val">${today}</div>
       </div>
-      <div class="strip-label">שם מלא</div>
+      <div class="strip-label">תאריך</div>
     </div>
     <div class="strip-field" style="flex:0 0 auto;min-width:200px;">
       <div id="sig-display-area" class="sig-field-line" onclick="openSigModal()">
         <span class="sig-field-hint">✍ חתום כאן</span>
       </div>
       <div class="strip-label">חתימה</div>
-    </div>    
+    </div>
     <div class="strip-field">
       <div class="strip-line">
-        <div class="strip-date-val">${today}</div>
+        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
       </div>
-      <div class="strip-label">תאריך</div>
+      <div class="strip-label">שם מלא</div>
     </div>
   `;
   return strip;
@@ -983,44 +1047,6 @@ function clearSig() {
 function checkReady() {
   const nameEl = document.getElementById('signer-name');
   document.getElementById('submit-btn').disabled = !(nameEl && nameEl.value.trim() && hasSig);
-}
-
-/* ══════════════════════════════════════════
-   TEXT → PNG IMAGE HELPER
-   Renders any Unicode / Hebrew / RTL text via a browser canvas and returns
-   a Uint8Array PNG. Used everywhere PDFLib's WinAnsi drawText would crash.
-══════════════════════════════════════════ */
-function textToImagePng(text, {
-  fontSize   = 14,
-  fontFamily = 'DM Sans, Arial, sans-serif',
-  color      = '#111111',
-  bold       = false,
-  direction  = 'rtl',   // 'rtl' for Hebrew, 'ltr' otherwise
-  padding    = 6,
-  maxWidth   = 400
-} = {}) {
-  // Measure first
-  const measure = document.createElement('canvas');
-  const mctx    = measure.getContext('2d');
-  mctx.font     = `${bold ? '700' : '400'} ${fontSize}px ${fontFamily}`;
-  const tw      = Math.min(mctx.measureText(text).width, maxWidth) + padding * 2;
-  const th      = fontSize * 1.5 + padding * 2;
-
-  const c   = document.createElement('canvas');
-  c.width   = Math.ceil(tw);
-  c.height  = Math.ceil(th);
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, c.width, c.height);
-  ctx.font      = `${bold ? '700' : '400'} ${fontSize}px ${fontFamily}`;
-  ctx.fillStyle = color;
-  ctx.direction = direction;
-  ctx.textAlign = direction === 'rtl' ? 'right' : 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, direction === 'rtl' ? c.width - padding : padding, c.height / 2, maxWidth);
-
-  const dataUrl = c.toDataURL('image/png');
-  const b64     = dataUrl.split(',')[1];
-  return Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
 }
 
 /* ══════════════════════════════════════════
@@ -1297,11 +1323,10 @@ async function buildSignedPdfFromContent(contentEl, sigDataUrlArg, signerName, s
 ══════════════════════════════════════════ */
 function downloadSigned() {
   if (!signedBytes || (signedBytes.length !== undefined && signedBytes.length === 0)) {
-    alert('אין קובץ להורדה');
+    showToast('אין קובץ להורדה', 'error');
     return;
   }
 
-  // Signed copies are always PDF (even for docx/xlsx originals)
   const mime = 'application/pdf';
   const name = currentFileType === 'pdf'
     ? 'חתום_' + currentFileName
@@ -1316,6 +1341,31 @@ function downloadSigned() {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+
+  // Enable back button now that user has downloaded
+  const backBtn = document.getElementById('btn-back-success');
+  if (backBtn) { backBtn.style.opacity = '1'; backBtn.style.pointerEvents = 'auto'; }
+  showToast('הורד בהצלחה ✓', 'success');
+}
+
+async function downloadCompletedDoc(token, fileName, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'מוריד...'; }
+  try {
+    const res  = await fetchWithTimeout(`${APPS_SCRIPT_URL}?action=fetchSigned&token=${enc(token)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const bytes = Uint8Array.from(atob(data.pdf.replace(/\s/g,'')), c => c.charCodeAt(0));
+    const blob  = new Blob([bytes], { type: 'application/pdf' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href = url; a.download = 'חתום_' + (data.fileName || fileName); a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 200);
+    showToast('הורד בהצלחה ✓', 'success');
+  } catch (err) {
+    showToast('שגיאה בהורדה: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↓ הורד'; }
+  }
 }
 </script>
 </body>
