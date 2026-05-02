@@ -126,9 +126,6 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
   background: #f8f8ff;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   cursor: pointer; gap: 5px; transition: border-color .18s, background .18s;
-  margin-bottom: 5px;
-  border-bottom: 1.5px solid #333;
-  border-radius: 6px 6px 0 0;
 }
 .sig-open-btn:hover { border-color: #1d4ed8; background: #eff4ff; }
 .sig-open-btn .pen-icon { font-size: 22px; }
@@ -771,25 +768,24 @@ function buildSigStrip() {
   strip.innerHTML = `
     <div class="strip-field">
       <div class="strip-line">
-        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
+        <div class="strip-date-val">${today}</div>
       </div>
-      <div class="strip-label">שם מלא</div>
+      <div class="strip-label">תאריך</div>
     </div>
     <div class="strip-field" style="flex:0 0 auto;">
-      <div class="strip-line" style="justify-content:center;padding-bottom:0;border-bottom:none;">
+      <div class="strip-line" style="border-bottom:none;padding-bottom:0;align-items:center;">
         <div id="sig-display-area" class="sig-open-btn" onclick="openSigModal()">
           <div class="pen-icon">✍️</div>
           <div class="btn-label">לחץ לחתימה</div>
         </div>
       </div>
       <div class="strip-label">חתימה</div>
-      <button class="clear-link" onclick="clearSig()">נקה</button>
     </div>
     <div class="strip-field">
       <div class="strip-line">
-        <div class="strip-date-val">${today}</div>
+        <input class="strip-input" id="signer-name" placeholder="שם מלא" oninput="checkReady()">
       </div>
-      <div class="strip-label">תאריך</div>
+      <div class="strip-label">שם מלא</div>
     </div>
   `;
   return strip;
@@ -1198,10 +1194,11 @@ async function renderSigStripToImage(signerName, sigDataUrlArg, signerDate) {
   const sigImg = new Image();
   await new Promise(res => { sigImg.onload = res; sigImg.src = sigDataUrlArg; });
 
-  // RTL order: name on RIGHT (col3x), sig in CENTRE (col2x), date on LEFT (col1x)
-  drawField(col3x, FIELD_W, signerName, 'שם מלא', null);
+  // Canvas is LTR: col1x=left=name, col2x=center=sig, col3x=right=date
+  // UI is RTL: name renders right, date renders left — they match when PDF is read RTL
+  drawField(col1x, FIELD_W, signerName, 'שם מלא', null);
   drawField(col2x, SIG_W,   '',         'חתימה',   sigImg);
-  drawField(col1x, FIELD_W, signerDate, 'תאריך',   null);
+  drawField(col3x, FIELD_W, signerDate, 'תאריך',   null);
 
   const dataUrl = c.toDataURL('image/png');
   return Uint8Array.from(atob(dataUrl.split(',')[1]), ch => ch.charCodeAt(0));
