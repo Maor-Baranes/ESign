@@ -254,6 +254,32 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 .dl-btn:hover { background: #eff4ff; border-color: var(--blue); }
 .dl-btn:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ── DISTRIBUTE MODAL ── */
+.dist-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; align-items: center; justify-content: center; }
+.dist-modal-overlay.open { display: flex; }
+.dist-modal { background: #fff; border-radius: 16px; width: min(500px, 96vw); box-shadow: 0 24px 60px rgba(0,0,0,.28); overflow: hidden; animation: modalIn .18s ease; }
+.dist-modal-header { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dist-modal-title { font-family: 'DM Serif Display', serif; font-size: 20px; }
+.dist-modal-file  { font-size: 12px; color: var(--ink-light); margin-top: 3px; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dist-modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #888; padding: 2px 6px; border-radius: 6px; flex-shrink: 0; }
+.dist-modal-close:hover { background: #f3f4f6; }
+.dist-modal-body  { padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+.email-chips-wrap { min-height: 52px; border: 1.5px solid var(--border); border-radius: var(--r); padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; cursor: text; transition: border-color .18s; }
+.email-chips-wrap:focus-within { border-color: var(--blue); }
+.email-chip { display: flex; align-items: center; gap: 5px; background: #eff4ff; color: var(--blue); border-radius: 20px; padding: 3px 10px 3px 12px; font-size: 13px; font-weight: 500; }
+.email-chip button { background: none; border: none; cursor: pointer; color: var(--blue); font-size: 16px; line-height: 1; padding: 0 1px; opacity: .6; }
+.email-chip button:hover { opacity: 1; }
+.email-chip.invalid { background: #fee2e2; color: var(--red); }
+.email-chip.invalid button { color: var(--red); }
+#dist-email-input { border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 14px; min-width: 180px; flex: 1; padding: 2px 0; direction: ltr; }
+.dist-hint { font-size: 11px; color: #aaa; }
+.dist-modal-footer { padding: 14px 22px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-start; gap: 8px; }
+.dist-send-btn { padding: 10px 24px; background: var(--blue); color: white; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+.dist-send-btn:disabled { opacity: .4; cursor: not-allowed; }
+.dist-send-btn:not(:disabled):hover { background: var(--blue-dark); }
+.send-btn-card { padding: 5px 12px; background: none; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink); transition: background .15s, border-color .15s; white-space: nowrap; }
+.send-btn-card:hover { background: #eff4ff; border-color: var(--blue); color: var(--blue); }
+
 /* ── ERROR ── */
 #error-screen { flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px; gap: 12px; }
 #error-screen h2 { font-family: 'DM Serif Display', serif; font-size: 26px; }
@@ -277,6 +303,31 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- DISTRIBUTION MODAL -->
+<div class="dist-modal-overlay" id="dist-modal-overlay" onclick="handleDistOverlayClick(event)">
+  <div class="dist-modal">
+    <div class="dist-modal-header">
+      <div>
+        <div class="dist-modal-title">שלח לחתימה</div>
+        <div class="dist-modal-file" id="dist-modal-file"></div>
+      </div>
+      <button class="dist-modal-close" onclick="closeDistModal()">✕</button>
+    </div>
+    <div class="dist-modal-body">
+      <div class="sf-label">כתובות אימייל</div>
+      <div class="email-chips-wrap" id="email-chips-wrap" onclick="document.getElementById('dist-email-input').focus()">
+        <input id="dist-email-input" type="email" placeholder="הזן אימייל ולחץ Enter" autocomplete="off"
+               onkeydown="handleEmailKey(event)" oninput="updateDistSendBtn()">
+      </div>
+      <div class="dist-hint">לחץ Enter או פסיק אחרי כל כתובת · ניתן להוסיף כמה שרוצים</div>
+    </div>
+    <div class="dist-modal-footer">
+      <button class="dist-send-btn" id="btn-dist-send" onclick="distributeDoc()" disabled>שלח קישורים לחתימה ✓</button>
+      <button class="btn-modal-cancel" onclick="closeDistModal()">ביטול</button>
+    </div>
+  </div>
+</div>
 
 <!-- SIGNATURE MODAL -->
 <div class="sig-modal-overlay" id="sig-modal-overlay" onclick="handleModalOverlayClick(event)">
@@ -316,7 +367,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <!-- LOGIN -->
 <div id="login-screen" class="screen">
   <div class="login-wrap">
-    <div class="login-logo">חתימה מהירה<span></span></div>
+    <div class="login-logo">חתימה<span>.</span></div>
     <div class="login-sub">מערכת חתימה אלקטרונית מאובטחת</div>
     <div class="card">
       <div class="field">
@@ -576,8 +627,9 @@ function makeCard(doc) {
         <div class="doc-date">${doc.createdAt ? fmtDate(doc.createdAt) : ''}${doc.completedAt ? ' · נחתם ' + fmtDate(doc.completedAt) : ''}</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      ${isCompleted ? `<button class="dl-btn" onclick="downloadCompletedDoc('${doc.token}','${doc.fileName}',this)">↓ הורד</button>` : ''}
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="send-btn-card" onclick="event.stopPropagation();openDistModal('${doc.token}','${doc.fileName.replace(/'/g,"\\'")}')">📤 שלח</button>
+      ${isCompleted ? `<button class="dl-btn" onclick="event.stopPropagation();downloadCompletedDoc('${doc.token}','${doc.fileName}',this)">↓ הורד</button>` : ''}
       <div class="badge ${doc.status}">${isPending ? 'ממתין' : 'חתום ✓'}</div>
     </div>
   `;
@@ -846,7 +898,7 @@ function buildSigStrip() {
   `;
   return strip;
 }
-  
+
 /* ══════════════════════════════════════════
    DOCX VIEWER
 ══════════════════════════════════════════ */
@@ -1318,7 +1370,122 @@ async function buildSignedPdfFromContent(contentEl, sigDataUrlArg, signerName, s
 }
 
 /* ══════════════════════════════════════════
-   DOWNLOAD SIGNED FILE
+   DISTRIBUTION — send doc to multiple signers
+══════════════════════════════════════════ */
+let distToken    = '';
+let distFileName = '';
+let distEmails   = [];
+
+function openDistModal(token, fileName) {
+  distToken    = token;
+  distFileName = fileName;
+  distEmails   = [];
+  document.getElementById('dist-modal-file').textContent = fileName;
+  document.getElementById('email-chips-wrap').innerHTML  =
+    `<input id="dist-email-input" type="email" placeholder="הזן אימייל ולחץ Enter" autocomplete="off"
+            onkeydown="handleEmailKey(event)" oninput="updateDistSendBtn()">`;
+  document.getElementById('btn-dist-send').disabled = true;
+  document.getElementById('dist-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('dist-email-input')?.focus(), 80);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDistModal() {
+  document.getElementById('dist-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleDistOverlayClick(e) {
+  if (e.target === document.getElementById('dist-modal-overlay')) closeDistModal();
+}
+
+function handleEmailKey(e) {
+  if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+    e.preventDefault();
+    addEmailChip(e.target.value.trim().replace(/,/g, ''));
+  }
+  if (e.key === 'Backspace' && !e.target.value && distEmails.length) {
+    removeEmailChip(distEmails.length - 1);
+  }
+}
+
+function addEmailChip(email) {
+  if (!email) return;
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (distEmails.includes(email)) {
+    showToast('כתובת זו כבר נוספה', 'error');
+    document.getElementById('dist-email-input').value = '';
+    return;
+  }
+  distEmails.push(email);
+
+  const input = document.getElementById('dist-email-input');
+  const chip  = document.createElement('div');
+  chip.className = `email-chip${valid ? '' : ' invalid'}`;
+  chip.dataset.email = email;
+  chip.innerHTML = `<span>${email}</span><button onclick="removeEmailChip(${distEmails.length - 1})" type="button">×</button>`;
+  input.parentNode.insertBefore(chip, input);
+  input.value = '';
+  updateDistSendBtn();
+}
+
+function removeEmailChip(idx) {
+  distEmails.splice(idx, 1);
+  // Rebuild chips
+  const wrap  = document.getElementById('email-chips-wrap');
+  const input = document.getElementById('dist-email-input');
+  wrap.querySelectorAll('.email-chip').forEach(c => c.remove());
+  const saved = [...distEmails];
+  distEmails  = [];
+  saved.forEach(e => {
+    distEmails.push(e);
+    const chip = document.createElement('div');
+    chip.className = 'email-chip';
+    chip.dataset.email = e;
+    chip.innerHTML = `<span>${e}</span><button onclick="removeEmailChip(${distEmails.length - 1})" type="button">×</button>`;
+    wrap.insertBefore(chip, input);
+  });
+  updateDistSendBtn();
+}
+
+function updateDistSendBtn() {
+  const hasValid = distEmails.some(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  document.getElementById('btn-dist-send').disabled = !hasValid;
+}
+
+async function distributeDoc() {
+  const validEmails = distEmails.filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  if (!validEmails.length) return;
+
+  const btn = document.getElementById('btn-dist-send');
+  btn.disabled    = true;
+  btn.textContent = 'שולח...';
+
+  try {
+    const res  = await fetchWithTimeout(APPS_SCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action:      'distribute',
+        token:       distToken,
+        emails:      validEmails,
+        senderEmail: currentUser.email
+      })
+    }, 40000);
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    closeDistModal();
+    showToast(`נשלחו ${data.results.length} קישורי חתימה ✓`, 'success');
+  } catch (err) {
+    showToast('שגיאה בשליחה: ' + err.message, 'error');
+    btn.disabled    = false;
+    btn.textContent = 'שלח קישורים לחתימה ✓';
+  }
+}
+
+
    All signed copies are now PDFs (PDFLib output).
 ══════════════════════════════════════════ */
 function downloadSigned() {
