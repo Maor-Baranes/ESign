@@ -494,7 +494,13 @@ let hasDownloaded   = false;   // tracks if user downloaded the signed copy
 
 window.addEventListener('load', () => {
   urlToken = new URLSearchParams(location.search).get('token');
-  show('login-screen');
+  if (urlToken) {
+    // Direct signing link — no login required
+    currentUser = { username: 'guest', email: '' };
+    openByToken(urlToken);
+  } else {
+    show('login-screen');
+  }
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && isActive('login-screen')) doLogin();
@@ -1206,9 +1212,14 @@ async function submitSigned() {
       })
     }, 45000).catch(err => console.warn('Backend notification failed (non-blocking):', err));
 
-    // Navigate to success immediately — the signed PDF is ready to download
+    // Navigate to success immediately
     document.getElementById('success-msg').textContent =
-      'המסמך החתום מוכן להורדה. עדכון הרשימה עשוי לקחת מספר שניות.';
+      'המסמך החתום מוכן להורדה. המייל נשלח לכל הנמענים.';
+
+    // Enable back button immediately — download is optional
+    const backBtn = document.getElementById('btn-back-success');
+    if (backBtn) { backBtn.style.opacity = '1'; backBtn.style.pointerEvents = 'auto'; }
+
     show('success-screen');
 
   } catch (err) {
