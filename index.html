@@ -304,6 +304,31 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- SETTINGS MODAL -->
+<div class="dist-modal-overlay" id="settings-modal-overlay" onclick="handleSettingsOverlayClick(event)">
+  <div class="dist-modal">
+    <div class="dist-modal-header">
+      <div>
+        <div class="dist-modal-title">⚙️ הגדרות</div>
+        <div class="dist-modal-file">נמענים קבועים לקבלת כל מסמך חתום</div>
+      </div>
+      <button class="dist-modal-close" onclick="closeSettingsModal()">✕</button>
+    </div>
+    <div class="dist-modal-body">
+      <div class="sf-label">נמענים קבועים (מנהלים / בעלים)</div>
+      <div class="email-chips-wrap" id="cc-chips-wrap" onclick="document.getElementById('cc-email-input').focus()">
+        <input id="cc-email-input" type="email" placeholder="הזן אימייל ולחץ Enter" autocomplete="off"
+               onkeydown="handleCcKey(event)">
+      </div>
+      <div class="dist-hint">כל מסמך חתום יישלח אוטומטית לכתובות אלה · בנוסף לחותם עצמו</div>
+    </div>
+    <div class="dist-modal-footer">
+      <button class="dist-send-btn" id="btn-save-settings" onclick="saveSettings()">שמור הגדרות ✓</button>
+      <button class="btn-modal-cancel" onclick="closeSettingsModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <!-- DISTRIBUTION MODAL -->
 <div class="dist-modal-overlay" id="dist-modal-overlay" onclick="handleDistOverlayClick(event)">
   <div class="dist-modal">
@@ -388,8 +413,9 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 <div id="dashboard-screen" class="screen">
   <div class="topbar">
     <div class="topbar-brand">חתימה<span>.</span></div>
-    <div style="display:flex;align-items:center;gap:16px;">
+    <div style="display:flex;align-items:center;gap:10px;">
       <div class="topbar-user" id="topbar-user"></div>
+      <button onclick="openSettingsModal()" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 13px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--ink-light);" title="הגדרות">⚙️</button>
       <button onclick="doLogout()" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 13px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color:var(--ink-light);">יציאה</button>
     </div>
   </div>
@@ -1366,6 +1392,110 @@ async function buildSignedPdfFromContent(contentEl, sigDataUrlArg, signerName, s
   }
 
   return await pdfDoc.save();
+}
+
+/* ══════════════════════════════════════════
+   SETTINGS — CC recipients for all signed docs
+══════════════════════════════════════════ */
+let ccEmails = [];
+
+async function openSettingsModal() {
+  // Load current CC list from GAS
+  try {
+    const res  = await fetchWithTimeout(`${APPS_SCRIPT_URL}?action=getSettings`);
+    const data = await res.json();
+    ccEmails   = data.ccEmails || [];
+  } catch (_) { ccEmails = []; }
+
+  renderCcChips();
+  document.getElementById('settings-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('cc-email-input')?.focus(), 80);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSettingsModal() {
+  document.getElementById('settings-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleSettingsOverlayClick(e) {
+  if (e.target === document.getElementById('settings-modal-overlay')) closeSettingsModal();
+}
+
+function handleCcKey(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    addCcChip(e.target.value.trim().replace(/,/g, ''));
+  }
+  if (e.key === 'Backspace' && !e.target.value && ccEmails.length) {
+    ccEmails.pop();
+    renderCcChips();
+  }
+}
+
+function addCcChip(email) {
+  if (!email) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('כתובת אימייל לא תקינה', 'error'); return;
+  }
+  if (ccEmails.includes(email)) {
+    showToast('כתובת זו כבר קיימת', 'error');
+    document.getElementById('cc-email-input').value = ''; return;
+  }
+  ccEmails.push(email);
+  document.getElementById('cc-email-input').value = '';
+  renderCcChips();
+}
+
+function removeCcChip(idx) {
+  ccEmails.splice(idx, 1);
+  renderCcChips();
+}
+
+function renderCcChips() {
+  const wrap  = document.getElementById('cc-chips-wrap');
+  const input = document.getElementById('cc-email-input');
+  wrap.innerHTML = '';
+  ccEmails.forEach((email, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'email-chip';
+    chip.innerHTML = `<span>${email}</span><button onclick="removeCcChip(${i})" type="button">×</button>`;
+    wrap.appendChild(chip);
+  });
+  wrap.appendChild(input || (() => {
+    const inp = document.createElement('input');
+    inp.id = 'cc-email-input'; inp.type = 'email';
+    inp.placeholder = 'הזן אימייל ולחץ Enter'; inp.autocomplete = 'off';
+    inp.setAttribute('onkeydown', 'handleCcKey(event)');
+    return inp;
+  })());
+  // Re-attach input if it was detached
+  if (!document.getElementById('cc-email-input')) {
+    const inp = document.createElement('input');
+    inp.id = 'cc-email-input'; inp.type = 'email';
+    inp.placeholder = 'הזן אימייל ולחץ Enter';
+    inp.setAttribute('onkeydown', 'handleCcKey(event)');
+    wrap.appendChild(inp);
+  }
+}
+
+async function saveSettings() {
+  const btn = document.getElementById('btn-save-settings');
+  btn.disabled = true; btn.textContent = 'שומר...';
+  try {
+    const res  = await fetchWithTimeout(APPS_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveSettings', ccEmails })
+    }, 20000);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    closeSettingsModal();
+    showToast('ההגדרות נשמרו ✓', 'success');
+  } catch (err) {
+    showToast('שגיאה בשמירה: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'שמור הגדרות ✓';
+  }
 }
 
 /* ══════════════════════════════════════════
