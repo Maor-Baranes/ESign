@@ -758,12 +758,7 @@ async function handleUpload(e) {
 
     e.target.value = '';
 
-    if (token) {
-      // Navigate straight to the signing interface — no dashboard detour
-      await openByToken(token);
-    } else {
-      await loadDashboard();
-    }
+  await loadDashboard();
 
   } catch (err) {
     console.error('Upload error:', err);
