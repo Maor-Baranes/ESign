@@ -758,11 +758,13 @@ async function handleUpload(e) {
 
     e.target.value = '';
 
-  await loadDashboard();
+    // File is stored — wait briefly for GAS to finish writing, then reload dashboard
+    await sleep(1500);
+    await loadDashboard();
 
   } catch (err) {
     console.error('Upload error:', err);
-    alert('שגיאה בהעלאה: ' + err.message);
+    showToast('שגיאה בהעלאה: ' + err.message, 'error');
     e.target.value = '';
     show('dashboard-screen');
     loadDashboard().catch(console.error);
