@@ -489,7 +489,8 @@ let currentFileType = '';
 let urlToken        = null;
 let hasSig          = false;
 let sigStripEl      = null;
-let hasDownloaded   = false;   // tracks if user downloaded the signed copy
+let hasDownloaded   = false;
+let viewMode        = false;  // true = read-only viewer, no signing   // tracks if user downloaded the signed copy
 
 window.addEventListener('load', () => {
   urlToken = new URLSearchParams(location.search).get('token');
@@ -619,7 +620,7 @@ async function loadDashboard() {
   setLoading('טוען מסמכים…');
   try {
     const res  = await fetchWithTimeout(
-`${APPS_SCRIPT_URL}?action=list&email=${enc(currentUser.email || currentUser.username)}`
+      `${APPS_SCRIPT_URL}?action=list&email=${enc(currentUser.email)}`
     );
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -648,7 +649,8 @@ function makeCard(doc) {
   const card  = document.createElement('div');
   const isPending   = doc.status === 'pending';
   const isCompleted = doc.status === 'completed';
-  card.className = `doc-card${isPending ? ' clickable' : ''}`;
+  const safeName    = doc.fileName.replace(/'/g, "\\'");
+  card.className = 'doc-card';
   card.innerHTML = `
     <div class="doc-left">
       <div class="doc-icon ${cls}">${icons[ext] || '📎'}</div>
@@ -658,12 +660,13 @@ function makeCard(doc) {
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button class="send-btn-card" onclick="event.stopPropagation();openDistModal('${doc.token}','${doc.fileName.replace(/'/g,"\\'")}')">📤 שלח</button>
-      ${isCompleted ? `<button class="dl-btn" onclick="event.stopPropagation();downloadCompletedDoc('${doc.token}','${doc.fileName}',this)">↓ הורד</button>` : ''}
+      <button class="send-btn-card" onclick="event.stopPropagation();viewDocument('${doc.token}',${isCompleted})">👁 צפה</button>
+      ${isPending   ? `<button class="send-btn-card" style="color:var(--blue);border-color:var(--blue);" onclick="event.stopPropagation();openByToken('${doc.token}')">✍ חתום</button>` : ''}
+      ${isCompleted ? `<button class="dl-btn" onclick="event.stopPropagation();downloadCompletedDoc('${doc.token}','${safeName}',this)">↓ הורד</button>` : ''}
+      <button class="send-btn-card" onclick="event.stopPropagation();openDistModal('${doc.token}','${safeName}')">📤 שלח</button>
       <div class="badge ${doc.status}">${isPending ? 'ממתין' : 'חתום ✓'}</div>
     </div>
   `;
-  if (isPending) card.onclick = () => openByToken(doc.token);
   return card;
 }
 
@@ -677,6 +680,7 @@ function backToDash() {
   sigStripEl = null;
   sigDataUrl = null;
   hasSig = false;
+  viewMode = false;
 
   document.getElementById('viewer-body').innerHTML = '';
 
@@ -719,10 +723,10 @@ async function handleUpload(e) {
       action:      'store',
       pdf:         b64,
       fileName:    file.name,
-     signerEmail: currentUser.email || currentUser.username,
-     senderEmail: currentUser.email || currentUser.username
+      signerEmail: currentUser.email,
+      senderEmail: currentUser.email
     });
-    
+
     let token = null;
 
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -772,6 +776,47 @@ async function handleUpload(e) {
 }
 
 /* ══════════════════════════════════════════
+   VIEW DOCUMENT (read-only)
+══════════════════════════════════════════ */
+async function viewDocument(token, isCompleted) {
+  viewMode = true;
+  if (isCompleted) {
+    // Show the signed PDF via fetchSigned
+    setLoading('טוען מסמך חתום…');
+    try {
+      const res  = await fetchWithTimeout(`${APPS_SCRIPT_URL}?action=fetchSigned&token=${enc(token)}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      currentFileName = data.fileName || 'מסמך חתום';
+      currentFileType = 'pdf';
+      document.getElementById('vtop-file').textContent = currentFileName;
+      document.getElementById('submit-btn').style.display = 'none';
+
+      const clean = data.pdf.replace(/\s/g, '');
+      const chars = atob(clean);
+      docBytes = new Uint8Array(chars.length);
+      for (let i = 0; i < chars.length; i++) docBytes[i] = chars.charCodeAt(i);
+
+      const body = document.getElementById('viewer-body');
+      body.innerHTML = '';
+      await buildPDFViewer(docBytes, body);
+      // Hide the sig strip in view mode
+      if (sigStripEl) sigStripEl.style.display = 'none';
+      const hint = document.getElementById('sig-strip-hint');
+      if (hint) hint.classList.remove('visible');
+      show('viewer-screen');
+    } catch (err) {
+      viewMode = false;
+      showErr('לא ניתן לטעון את המסמך: ' + err.message);
+    }
+  } else {
+    // Pending doc — use normal openByToken, viewMode flag suppresses signing UI
+    await openByToken(token);
+  }
+}
+
+/* ══════════════════════════════════════════
    OPEN DOCUMENT BY TOKEN
 ══════════════════════════════════════════ */
 async function openByToken(token) {
@@ -810,6 +855,17 @@ async function openByToken(token) {
     for (let i = 0; i < chars.length; i++) docBytes[i] = chars.charCodeAt(i);
 
     await buildViewer(docBytes, currentFileType);
+
+    // In view-only mode: hide submit button and sig strip/sidebar
+    if (viewMode) {
+      document.getElementById('submit-btn').style.display = 'none';
+      if (sigStripEl) sigStripEl.style.display = 'none';
+      const sidebar = document.querySelector('.sign-sidebar');
+      if (sidebar) sidebar.style.display = 'none';
+      const hint = document.getElementById('sig-strip-hint');
+      if (hint) hint.classList.remove('visible');
+    }
+
     show('viewer-screen');
 
   } catch (err) {
