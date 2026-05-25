@@ -277,7 +277,7 @@ canvas.pdf-page { display: block; max-width: 100%; background: white; }
 .dist-send-btn { padding: 10px 24px; background: var(--blue); color: white; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
 .dist-send-btn:disabled { opacity: .4; cursor: not-allowed; }
 .dist-send-btn:not(:disabled):hover { background: var(--blue-dark); }
-.send-btn-card { padding: 5px 12px; background: none; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink); transition: background .15s, border-color .15s; white-space: nowrap; }
+.send-btn-card { padding: 4px 9px; font-size: 11px; background: none; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink); transition: background .15s, border-color .15s; white-space: nowrap; }
 .send-btn-card:hover { background: #eff4ff; border-color: var(--blue); color: var(--blue); }
 
 /* ── ERROR ── */
@@ -659,7 +659,7 @@ function makeCard(doc) {
         <div class="doc-date">${doc.createdAt ? fmtDate(doc.createdAt) : ''}${doc.completedAt ? ' · נחתם ' + fmtDate(doc.completedAt) : ''}</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:280px;">
       <button class="send-btn-card" onclick="event.stopPropagation();viewDocument('${doc.token}',${isCompleted})">👁 צפה</button>
       ${isPending   ? `<button class="send-btn-card" style="color:var(--blue);border-color:var(--blue);" onclick="event.stopPropagation();openByToken('${doc.token}')">✍ חתום</button>` : ''}
       ${isCompleted ? `<button class="dl-btn" onclick="event.stopPropagation();downloadCompletedDoc('${doc.token}','${safeName}',this)">↓ הורד</button>` : ''}
